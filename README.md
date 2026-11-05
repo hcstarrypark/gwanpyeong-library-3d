@@ -4,6 +4,8 @@
 
 Three.js(r128) 하나로 만들었고, 빌드 과정 없이 HTML·JavaScript 파일만으로 돌아갑니다.
 
+**바로 플레이하기: <https://hcstarrypark.github.io/gwanpyeong-library-3d/>**
+
 ## 실행하기
 
 책 데이터와 영상이 별도 파일이라, 폴더를 로컬 웹 서버로 여는 것이 가장 확실합니다.
