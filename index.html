@@ -200,7 +200,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div><kbd>좌클릭</kbd> 책 펼치기 · <kbd>← →</kbd> 넘기기 · <kbd>Esc</kbd> 덮기</div>
   <div><kbd>우클릭</kbd> 책 들기 · <kbd>R</kbd> 읽기 · <kbd>Q</kbd> 제자리에</div>
   <div>의자·벤치 클릭 앉기 · 사다리 마주 보고 <kbd>W</kbd> · <kbd>E</kbd> 문</div>
-  <div><kbd>N</kbd> 다른 방문자에게 보일 내 이름 바꾸기</div>
+  <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기</div>
 </div></div>
 <div id="paused" hidden>화면을 클릭하면 시점이 고정돼요 · 드래그로도 둘러볼 수 있어요</div>
 <div id="touch"><button id="tUse" aria-label="문 열기">E 문</button><button id="tJump" aria-label="점프">점프</button><button id="tFwd" aria-label="앞으로">▲</button><button id="tBack" aria-label="뒤로">▼</button></div>
@@ -366,6 +366,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyQ' && hooks.drop && !e.repeat) hooks.drop();
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
   if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
+  if(e.code==='KeyM' && hooks.relook && !e.repeat && started) hooks.relook();
   if(e.code==='KeyH' && !e.repeat){ const bd=$('lgBody'); bd.hidden=!bd.hidden; $('lgState').textContent=bd.hidden?'보기':'숨기기'; }
   if(e.code==='Space' && !e.repeat) jumpQueued = true;
   keys.add(e.code);
@@ -1257,10 +1258,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   function useDoor(d){
     if(d.target){
       if(Math.abs(player.x-d.x)<.6 && player.z>d.z0-.3 && player.z<d.z1+.3){ toast('문틀에서 한 걸음 물러난 뒤 닫아 주세요.'); return; }
-      d.target=0; tone([520],.06,'sine',.03); return;
+      d.target=0; tone([520],.06,'sine',.03); mpAct('door'); mpDoor(roomDoors.indexOf(d),0); return;
     }
     if(d.locked && !inRoom(d)){ openLock(d); return; }
-    d.target=1; d.openT=0; tone([660],.06,'sine',.03);
+    d.target=1; d.openT=0; tone([660],.06,'sine',.03); mpAct('door'); mpDoor(roomDoors.indexOf(d),1);
   }
   function nearRoomDoor(){ let best=null, bd=1.8; for(const d of roomDoors){ const k=Math.hypot(player.x-d.x,player.z-d.zc); if(k<bd){ bd=k; best=d; } } return best; }
   const officeDoor=roomDoor(LOBBY_X,20.15,21.2,1,'사무실',true);
@@ -1299,7 +1300,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(lkBusy) return;
     if(lkCode===PASSCODE){
       lkBusy=true; lkRender('띠리릭 — 문이 열렸어요','ok'); tone([784,988,1175,1568],.11,'sine',.05);
-      setTimeout(()=>{ closeSearch(true); lockDoor.target=1; lockDoor.openT=0; toast('사무실 문이 열렸어요. 들어가 보세요.'); },700);
+      setTimeout(()=>{ closeSearch(true); lockDoor.target=1; lockDoor.openT=0; mpAct('door'); mpDoor(roomDoors.indexOf(lockDoor),1); toast('사무실 문이 열렸어요. 들어가 보세요.'); },700);
     } else {
       const n=lkCode.length; lkCode='';
       lkRender(n?'비밀번호가 틀렸어요. 다시 눌러 주세요.':'숫자 4자리를 먼저 눌러 주세요.','bad'); tone([220,175],.16,'square',.04);
@@ -1473,23 +1474,112 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const s=new THREE.Mesh(new THREE.PlaneGeometry(.74,.44),new THREE.MeshBasicMaterial({map:c.rt.texture})); s.position.set(x,y,OZ0+.052); cctvScreens.add(s);
     act(s,()=>[c.name,'실시간 화면 · 클릭하면 크게 보기'],()=>openCctv(i));
   });
-  // a simple stand-in figure for the reader, visible only to the CCTV cameras (layer 1)
-  const avatar=new THREE.Group(); scene.add(avatar);
-  { const shirt=solid('#3f6fb5'), pants=solid('#2b2f38'), skin=solid('#e8c4a0'), hair=solid('#2a211b');
-    const arm=new THREE.CylinderGeometry(.05,.05,.58,8);
-    for(const [geo,m,x,y,z] of [[new THREE.CylinderGeometry(.19,.21,.62,16),shirt,0,1.17,0],[new THREE.BoxGeometry(.34,.86,.2),pants,0,.43,0],[new THREE.SphereGeometry(.12,16,12),skin,0,1.62,0],[new THREE.SphereGeometry(.127,16,12,0,Math.PI*2,0,Math.PI/2),hair,0,1.64,.01],[arm,shirt,-.25,1.16,0],[arm,shirt,.25,1.16,0]]){
-      const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.layers.set(1); avatar.add(o); }
+  /* ---------- blocky toy-figure avatars: yours (seen only by the CCTV, layer 1) and other visitors ---------- */
+  const LOOK={
+    shirt:['#3f6fb5','#d9534f','#2e9e6a','#e0902a','#8a5bd1','#1fa3b0','#c7477f','#f2c94c','#2d3340','#eef1f4'],
+    pants:['#2b2f38','#3b4f7a','#5a4632','#4a4f57','#1f3b2e','#7a2f2f'],
+    hair:['#6b3a1e','#2a211b','#d9a441','#a8521f','#141414','#c9c9c9','#7b3fa0','#e5772f'],
+    jacket:['','#1c1e22','#5b3a29','#3a4a6b']
+  };
+  const rnd=n=>Math.floor(Math.random()*n);
+  const randomLook=()=>[rnd(10),rnd(6),rnd(8),rnd(5),rnd(5),rnd(4)].join('.');   // shirt.pants.hairColor.hairStyle.print.jacket
+  function parseLook(s){
+    const a=String(s||'').split('.').map(n=>Math.abs(parseInt(n)||0)), at=(i,arr)=>arr[(a[i]||0)%arr.length];
+    return {shirt:at(0,LOOK.shirt), pants:at(1,LOOK.pants), hair:at(2,LOOK.hair), style:(a[3]||0)%5, print:(a[4]||0)%5, jacket:at(5,LOOK.jacket)};
+  }
+  const safeColor=c=>typeof c==='string' && /^#[0-9a-f]{3,8}$/i.test(c) ? c : '';
+  const FIG_SKIN='#f3f3f1';
+  function cvTex(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=4; return t; }
+  const faceTex=cvTex(256,128,(x)=>{
+    x.fillStyle='#1b1b1b';
+    for(const ex of [100,156]){ x.beginPath(); x.ellipse(ex,48,9,15,0,0,Math.PI*2); x.fill(); }
+    x.strokeStyle='#1b1b1b'; x.lineWidth=7; x.lineCap='round'; x.beginPath(); x.arc(128,60,34,.22*Math.PI,.78*Math.PI); x.stroke();
+  });
+  const headGeo=new THREE.LatheGeometry([[0,-.15],[.12,-.15],[.158,-.135],[.172,-.1],[.172,.1],[.158,.135],[.12,.15],[0,.15]].map(([a,b])=>new THREE.Vector2(a,b)),28);
+  const faceGeo=new THREE.CylinderGeometry(.1735,.1735,.2,16,1,true,Math.PI-.9,1.8);
+  const handGeo=new THREE.TorusGeometry(.062,.032,8,16,Math.PI*1.5);
+  function makeFigure(lookStr,layer){
+    const L=parseLook(lookStr), g=new THREE.Group();
+    const skin=solid(FIG_SKIN), pants=solid(L.pants), shirt=solid(L.shirt), hair=solid(L.hair), shoe=solid('#f4f4f4'), sole=solid('#222');
+    const outer=L.jacket?solid(L.jacket):shirt;
+    const meshes=[];
+    const add=(geo,m,x,y,z,p=g)=>{ const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.castShadow=true; p.add(o); meshes.push(o); return o; };
+    const pivot=(x,y,p=g)=>{ const q=new THREE.Group(); q.position.set(x,y,0); p.add(q); return q; };
+    // torso: printed shirt on the front, jacket panels if any
+    const front=new THREE.MeshStandardMaterial({roughness:.6,map:cvTex(128,128,(x,w,h)=>{
+      x.fillStyle=L.shirt; x.fillRect(0,0,w,h);
+      x.fillStyle='rgba(255,255,255,.85)'; x.strokeStyle='rgba(255,255,255,.85)'; x.lineWidth=6;
+      if(L.print===1){ x.beginPath(); for(let i=0;i<10;i++){ const r=i%2?12:28, a=-Math.PI/2+i*Math.PI/5; x.lineTo(64+Math.cos(a)*r,64+Math.sin(a)*r); } x.fill(); }
+      if(L.print===2){ x.fillRect(38,46,24,36); x.fillRect(66,46,24,36); x.fillStyle=L.shirt; x.fillRect(62,44,4,40); }
+      if(L.print===3){ for(let y=18;y<h;y+=26) x.fillRect(0,y,w,9); }
+      if(L.print===4){ x.beginPath(); x.moveTo(64,92); x.bezierCurveTo(20,62,36,30,64,48); x.bezierCurveTo(92,30,108,62,64,92); x.fill(); }
+      if(L.jacket){ x.fillStyle=L.jacket; x.fillRect(0,0,30,h); x.fillRect(w-30,0,30,h); x.beginPath(); x.moveTo(30,0); x.lineTo(50,0); x.lineTo(30,34); x.fill(); x.beginPath(); x.moveTo(w-30,0); x.lineTo(w-50,0); x.lineTo(w-30,34); x.fill(); }
+      x.fillStyle='rgba(0,0,0,.12)'; x.fillRect(0,h-8,w,8);
+    })});
+    add(new THREE.BoxGeometry(.62,.6,.3),[outer,outer,outer,outer,outer,front],0,.96,0);
+    // head with a painted face on the front (-z is forward)
+    const hc=1.43; add(headGeo,skin,0,hc,0);
+    const face=add(faceGeo,new THREE.MeshBasicMaterial({map:faceTex,transparent:true}),0,hc+.01,0); face.castShadow=false;
+    // hair styles
+    const cap=(r,len,tilt)=>{ const o=add(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI*len),hair,0,hc+.03,0); o.rotation.x=tilt; o.scale.y=.85; return o; };
+    if(L.style===0){ // messy swoop: full cap, a fringe swept to one side, tufts on top
+      cap(.198,.56,.22);
+      for(let i=0;i<6;i++){ const o=add(new THREE.BoxGeometry(.12,.075,.14),hair,-.13+i*.055,hc+.115-i*.006,-.115); o.rotation.set(-.35,0,-.35+i*.04); }
+      for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, o=add(new THREE.BoxGeometry(.11,.08,.11),hair,Math.cos(a)*.11,hc+.165,Math.sin(a)*.1+.02); o.rotation.set(Math.sin(a)*.5,a,-Math.cos(a)*.5); }
+      for(let i=0;i<5;i++){ const o=add(new THREE.BoxGeometry(.1,.11,.09),hair,-.14+i*.07,hc+.02,.16); o.rotation.z=(i-2)*.18; }
+    } else if(L.style===1){ cap(.185,.5,.3); }
+    else if(L.style===2){ cap(.19,.52,.25); add(new THREE.BoxGeometry(.36,.34,.09),hair,0,hc-.07,.14); for(const s of [-1,1]) add(new THREE.BoxGeometry(.06,.26,.2),hair,s*.17,hc-.03,.04); }
+    else if(L.style===3){ cap(.185,.5,.3); for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, o=add(new THREE.ConeGeometry(.05,.15,6),hair,Math.cos(a)*.1,hc+.17,Math.sin(a)*.1+.02); o.rotation.set(Math.sin(a)*.6,0,-Math.cos(a)*.6); } }
+    else { cap(.18,.5,.45); const hat=solid(L.jacket||L.pants); add(new THREE.CylinderGeometry(.178,.186,.11,24),hat,0,hc+.13,0); add(new THREE.SphereGeometry(.178,24,8,0,Math.PI*2,0,Math.PI/2),hat,0,hc+.18,0).scale.y=.45; add(new THREE.BoxGeometry(.26,.025,.17),hat,0,hc+.09,-.22); }
+    // arms: sleeve, skin forearm, C-shaped hand
+    const arm=s=>{ const p=pivot(s*.45,1.25); add(new THREE.BoxGeometry(.27,.27,.29),outer,0,-.135,0,p); add(new THREE.BoxGeometry(.26,.33,.28),skin,0,-.43,0,p);
+      const h=add(handGeo,skin,0,-.64,-.01,p); h.rotation.set(0,Math.PI/2,Math.PI/4); return p; };
+    const armL=arm(-1), armR=arm(1);
+    const leg=s=>{ const p=pivot(s*.155,.66); add(new THREE.BoxGeometry(.3,.56,.3),pants,0,-.28,0,p); add(new THREE.BoxGeometry(.31,.08,.34),shoe,0,-.6,-.02,p); add(new THREE.BoxGeometry(.31,.025,.34),sole,0,-.645,-.02,p); return p; };
+    const legL=leg(-1), legR=leg(1);
+    // a book held in the right hand, and an open book held in front when reading
+    const heldMat=solid('#8a5bd1'), held=add(new THREE.BoxGeometry(.05,.27,.2),heldMat,0,-.66,-.12,armR); held.visible=false;
+    const open=new THREE.Group(); open.position.set(0,1.02,-.42); open.rotation.x=-.9; g.add(open); open.visible=false;
+    for(const s of [-1,1]){ const c=add(new THREE.BoxGeometry(.2,.012,.27),heldMat,s*.1,0,0,open); c.rotation.z=s*.18; const pg=add(new THREE.BoxGeometry(.19,.014,.25),solid('#fbf6ea'),s*.1,.008,0,open); pg.rotation.z=s*.18; }
+    if(layer) meshes.forEach(o=>o.layers.set(layer));
+    return {g,armL,armR,legL,legR,held,open,heldMat,heldColor:'',phase:0,act:null,look:lookStr};
+  }
+  function poseFigure(f,o,dt){
+    f.phase+=o.sp*dt*4.2;
+    const sw=Math.sin(f.phase)*Math.min(1,o.sp/1.5)*.7;
+    let aL=sw, aR=-sw, zL=0, zR=0;
+    if(o.read){ aL=aR=1.2; zL=.32; zR=-.32; }
+    else if(o.carry) aR=.8;
+    if(f.act){ f.act.t+=dt; const k=Math.sin(Math.PI*Math.min(1,f.act.t/.8)); const goal=f.act.kind==='door'?1.45:f.act.kind==='put'?1.6:1.7; aR+=(goal-aR)*k; if(f.act.kind==='door') zR=-.1*k; if(f.act.t>.8) f.act=null; }
+    const e=Math.min(1,dt*14), ap=(p,x,z)=>{ p.rotation.x+=(x-p.rotation.x)*e; p.rotation.z+=(z-p.rotation.z)*e; };
+    ap(f.armL,aL,zL); ap(f.armR,aR,zR);
+    ap(f.legL,o.seated?1.5:-sw,0); ap(f.legR,o.seated?1.5:sw,0);
+    const col=o.read||o.carry||'';
+    if(col && col!==f.heldColor){ f.heldColor=col; f.heldMat.color.set(col).convertSRGBToLinear(); }
+    f.held.visible=!!o.carry && !o.read; f.open.visible=!!o.read;
   }
 
   /* ---------- multiplayer: other visitors (WebRTC peer-to-peer via Trystero / Nostr signalling) ---------- */
   const MP_COLORS=['#3f6fb5','#d9534f','#2e9e6a','#e0902a','#8a5bd1','#1fa3b0','#c7477f','#7a8f2a'];
   const MP_KEY='gwanpyeong-mp-v1';
-  const mp={ name:'', color:'', send:null, status:'connecting', last:null, sendT:0, beatT:0, force:false };
+  const mp={ name:'', color:'', look:'', send:null, door:null, status:'connecting', last:null, beatT:0, force:false, ev:0, evk:'' };
   { let saved=null; try{ saved=JSON.parse(localStorage.getItem(MP_KEY)||'null'); }catch(e){}
     mp.name = saved&&saved.name ? saved.name : '방문자 '+(1000+Math.floor(Math.random()*9000));
     mp.color = saved&&saved.color ? saved.color : MP_COLORS[Math.floor(Math.random()*MP_COLORS.length)];
-    try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color})); }catch(e){} }
+    mp.look = saved&&saved.look ? saved.look : randomLook(); }
+  const mpSave=()=>{ try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color,look:mp.look})); }catch(e){} };
+  mpSave();
+  let myFig=makeFigure(mp.look,1); scene.add(myFig.g);
   const remotes=new Map();
+  function mpAct(kind){ myFig.act={kind,t:0}; mp.ev=(mp.ev+1)%1000; mp.evk=kind; mp.force=true; }
+  function mpDoor(id,t){ if(mp.door) try{ mp.door({d:id,t}); }catch(e){} }
+  function mpDoorRecv(m){
+    if(!m) return;
+    if(m.d==='m'){ doorTarget=m.t?1:0; if(m.t) doorCloseT=6; }
+    else { const D=roomDoors[m.d|0]; if(D){ D.target=m.t?1:0; D.openT=0; } }
+  }
+  // is anyone (me or another visitor) within r of (x,z)?
+  const anyoneNear=(x,z,r)=>{ if(Math.hypot(player.x-x,player.z-z)<r) return true; for(const v of remotes.values()) if(Math.hypot(v.x-x,v.z-z)<r) return true; return false; };
   function nameTag(name,color){
     const c=document.createElement('canvas'); c.width=512; c.height=96; const x=c.getContext('2d');
     x.font='bold 44px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
@@ -1499,46 +1589,37 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     x.fillStyle='#fff'; x.textBaseline='middle'; x.fillText(name,l+62,50,w-78);
     const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding;
     const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
-    s.scale.set(1.3,.244,1); s.position.y=2.05; s.renderOrder=5; return s;
+    s.scale.set(1.3,.244,1); s.position.y=2.02; s.renderOrder=5; return s;
   }
-  function makeVisitor(color,name){
-    const g=new THREE.Group(), shirt=solid(color), pants=solid('#2b2f38'), skin=solid('#e8c4a0'), hair=solid('#2a211b');
-    const add=(geo,m,x,y,z,p=g)=>{ const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.castShadow=true; p.add(o); return o; };
-    add(new THREE.CylinderGeometry(.19,.21,.62,16),shirt,0,1.17,0);
-    add(new THREE.SphereGeometry(.12,16,12),skin,0,1.62,0);
-    add(new THREE.SphereGeometry(.127,16,12,0,Math.PI*2,0,Math.PI/2),hair,0,1.64,.01);
-    add(new THREE.BoxGeometry(.12,.05,.06),skin,0,1.6,-.12);   // nose: shows which way they face
-    const limb=(x,y,len,r,m)=>{ const p=new THREE.Group(); p.position.set(x,y,0); g.add(p); add(new THREE.CylinderGeometry(r,r,len,8),m,0,-len/2,0,p); return p; };
-    const armL=limb(-.25,1.45,.58,.05,shirt), armR=limb(.25,1.45,.58,.05,shirt);
-    const legL=limb(-.09,.86,.86,.08,pants), legR=limb(.09,.86,.86,.08,pants);
-    const tag=nameTag(name,color); g.add(tag);
-    scene.add(g); return {g,armL,armR,legL,legR,tag};
-  }
+  function makeVisitor(look,color,name){ const f=makeFigure(look,0); f.tag=nameTag(name,color); f.g.add(f.tag); scene.add(f.g); return f; }
   function mpRecv(id,d){
     if(!d || typeof d.x!=='number') return;
     let r=remotes.get(id);
-    const name=String(d.n||'방문자').slice(0,16), color=MP_COLORS.includes(d.c)?d.c:MP_COLORS[0];
-    if(r && (r.name!==name || r.color!==color)){ scene.remove(r.v.g); r=null; }
-    if(!r){ r={v:makeVisitor(color,name), name, color, x:d.x, y:d.y, z:d.z, r:d.r, phase:0}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
-    Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, seen:performance.now()});
+    const name=String(d.n||'방문자').slice(0,16), color=MP_COLORS.includes(d.c)?d.c:MP_COLORS[0], look=/^[0-9.]{1,24}$/.test(d.l||'')?d.l:'0.0.0.0.0.0';
+    if(r && (r.name!==name || r.color!==color || r.look!==look)){ scene.remove(r.v.g); const v=makeVisitor(look,color,name); v.g.position.copy(r.v.g.position); Object.assign(r,{v,name,color,look}); }
+    if(!r){ r={v:makeVisitor(look,color,name), name, color, look, x:d.x, y:d.y, z:d.z, r:d.r, ev:d.e}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
+    if(d.e!==r.ev){ r.ev=d.e; if(d.k) r.v.act={kind:String(d.k),t:0}; }
+    Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, carry:safeColor(d.b), read:safeColor(d.rd), seen:performance.now()});
   }
   function mpRemove(id){ const r=remotes.get(id); if(!r) return; scene.remove(r.v.g); remotes.delete(id); mpHud(); toast(`${r.name} 님이 나갔어요.`); }
   function mpHud(){
     const el=$('mp'); if(!el) return;
     const n=remotes.size;
     el.innerHTML = mp.status==='offline' ? '혼자 둘러보는 중 · 함께 보기 연결 안 됨'
-      : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')} <kbd>N</kbd>`;
+      : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')} <kbd>N</kbd> 이름 <kbd>M</kbd> 모습`;
   }
   async function mpJoin(){
     mpHud();
     try{
       const {joinRoom}=await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
       const room=joinRoom({appId:'hcstarrypark-gwanpyeong-library-3d'},'library-main-v1');
-      const act=room.makeAction('st');
-      act.onMessage=(d,meta)=>mpRecv(meta&&meta.peerId!==undefined?meta.peerId:meta,d);
+      const act=room.makeAction('st'), door=room.makeAction('dr');
+      const pid=meta=>meta&&meta.peerId!==undefined?meta.peerId:meta;
+      act.onMessage=(d,meta)=>mpRecv(pid(meta),d);
+      door.onMessage=d=>mpDoorRecv(d);
       room.onPeerJoin=()=>{ mp.force=true; };
       room.onPeerLeave=id=>mpRemove(id);
-      mp.send=d=>act.send(d);
+      mp.send=d=>act.send(d); mp.door=d=>door.send(d);
       mp.status='online'; mpHud();
       addEventListener('pagehide',()=>{ try{ room.leave(); }catch(e){} });
     }catch(e){ console.warn('multiplayer unavailable',e); mp.status='offline'; mpHud(); }
@@ -1547,30 +1628,34 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(document.pointerLockElement) document.exitPointerLock();
     const v=prompt('다른 방문자에게 보일 이름 (16자까지)', mp.name); if(v===null) return;
     const nm=v.trim().slice(0,16); if(!nm) return;
-    mp.name=nm; mp.color=MP_COLORS[(MP_COLORS.indexOf(mp.color)+1)%MP_COLORS.length]; mp.force=true;
-    try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color})); }catch(e){}
+    mp.name=nm; mp.color=MP_COLORS[(MP_COLORS.indexOf(mp.color)+1)%MP_COLORS.length]; mp.force=true; mpSave();
     mpHud(); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
+  };
+  hooks.relook=()=>{
+    mp.look=randomLook(); mpSave(); mp.force=true;
+    scene.remove(myFig.g); myFig=makeFigure(mp.look,1); scene.add(myFig.g);
+    toast('모습을 바꿨어요. 다른 방문자와 CCTV에 새 모습으로 보여요. (M을 또 누르면 다시 바뀌어요)');
   };
   // sending runs on a timer, not the render loop, so a backgrounded tab still says "I'm here"
   setInterval(()=>{
     const now=performance.now();
     for(const [id,r] of remotes) if(now-r.seen>10000) mpRemove(id);
     if(!mp.send) return;
-    const st={x:+player.x.toFixed(2), y:+(player.y-(player.seat?.42:0)).toFixed(2), z:+player.z.toFixed(2), r:+player.yaw.toFixed(2), s:player.seat?1:0, n:mp.name, c:mp.color};
-    const key=st.x+','+st.y+','+st.z+','+st.r+','+st.s;
+    const st={x:+player.x.toFixed(2), y:+(player.y-(player.seat?.2:0)).toFixed(2), z:+player.z.toFixed(2), r:+player.yaw.toFixed(2), s:player.seat?1:0,
+      n:mp.name, c:mp.color, l:mp.look, b:carried?safeColor(carried.book.color):'', rd:reading&&cur?safeColor(cur.color)||'#8a5bd1':'', e:mp.ev, k:mp.evk};
+    const key=[st.x,st.y,st.z,st.r,st.s,st.b,st.rd,st.e].join(',');
     if(mp.force || key!==mp.last || now-mp.beatT>2000){ mp.force=false; mp.last=key; mp.beatT=now; try{ mp.send(st); }catch(e){} }
   },100);
   function mpUpdate(dt){
+    myFig.g.position.set(player.x, player.y-(player.seat?.2:0), player.z); myFig.g.rotation.y=player.yaw;
+    poseFigure(myFig,{sp:Math.hypot(player.vx,player.vz), seated:!!player.seat, carry:carried?safeColor(carried.book.color)||'#8a5bd1':'', read:reading&&cur?safeColor(cur.color)||'#8a5bd1':''},dt);
     for(const [id,r] of remotes){
       const k=Math.min(1,dt*10), px=r.x, pz=r.z;
       r.x+=(r.tx-r.x)*k; r.y+=(r.ty-r.y)*k; r.z+=(r.tz-r.z)*k;
       let dr=r.tr-r.r; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); r.r+=dr*k;
       const sp=Math.hypot(r.x-px,r.z-pz)/Math.max(dt,1e-3);
-      r.phase+=sp*dt*4.2;
-      const sw=Math.sin(r.phase)*Math.min(1,sp/1.5)*.6, v=r.v;
-      v.g.position.set(r.x,r.y,r.z); v.g.rotation.y=r.r;
-      v.armL.rotation.x=sw; v.armR.rotation.x=-sw;
-      if(r.seated){ v.legL.rotation.x=v.legR.rotation.x=1.45; } else { v.legL.rotation.x=-sw; v.legR.rotation.x=sw; }
+      r.v.g.position.set(r.x,r.y,r.z); r.v.g.rotation.y=r.r;
+      poseFigure(r.v,{sp, seated:r.seated, carry:r.carry, read:r.read},dt);
     }
   }
   let cctvMode=false, ccView=0, ccIdx=0, ccBoot=0, ccTimeT=0;
@@ -2361,7 +2446,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(carried && carried.book.film!==undefined){
       if(TV.playing) ejectDVD(true);
       const c=carried; carried=null; hand.visible=false; $('carry').hidden=true;
-      TV.playing={film:FILMS[c.book.film], h:c.h}; TV.ft=0; TV.beat=0;
+      TV.playing={film:FILMS[c.book.film], h:c.h}; TV.ft=0; TV.beat=0; mpAct('put');
       if(TV.playing.film.video){ if(!tvVideo.src.endsWith(TV.playing.film.video)) tvVideo.src=TV.playing.film.video; tvVideo.currentTime=0; tvVideo.play().catch(()=>{}); } TV.led.material.color.setHex(0x4cff7a);
       toast(`「${c.book.title}」 재생을 시작해요. 소리를 켜고, TV를 클릭하면 크게 볼 수 있어요.`); tone([880,1320],.06,'sine',.03);
       return;
@@ -2603,7 +2688,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     return bookCache.get(key);
   }
   const tipEl=$('tip');
-  function activate(h){ if(h.type==='a') h.obj.userData.act(); else if(h.type==='k') openSearch(); else if(h.type==='c') sit(h.seat); else openBook(bookFor(h)); }
+  function activate(h){ if(h.type==='a') h.obj.userData.act(); else if(h.type==='k') openSearch(); else if(h.type==='c') sit(h.seat); else { mpAct('pick'); openBook(bookFor(h)); } }
 
   /* ---------- sitting ---------- */
   function sit(seat){
@@ -2639,7 +2724,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const book=bookFor(h);
     if(h.type==='d'){ const S=decorSets[h.v]; S.im.getMatrixAt(h.i,_m); h.orig=_m.clone(); _m.scale(new THREE.Vector3(1e-4,1e-4,1e-4)); S.im.setMatrixAt(h.i,_m); S.im.instanceMatrix.needsUpdate=true; carriedKey=h.v*1e6+h.i; }
     else h.mesh.visible=false;
-    carried={h,book};
+    carried={h,book}; mpAct('pick');
     hand.clear();
     const coverC=new THREE.MeshStandardMaterial({color:new THREE.Color(book.color).convertSRGBToLinear(),roughness:.5});
     const front=new THREE.MeshStandardMaterial({map:book.coverTex||coverTex(book),roughness:.5});
@@ -2654,7 +2739,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const h=carried.h;
     if(h.type==='d'){ const S=decorSets[h.v]; S.im.setMatrixAt(h.i,h.orig); S.im.instanceMatrix.needsUpdate=true; carriedKey=-1; }
     else h.mesh.visible=true;
-    if(!silent) toast(`「${carried.book.title}」${batchim(carried.book.title)?'을':'를'} 제자리에 꽂았어요.`);
+    if(!silent){ toast(`「${carried.book.title}」${batchim(carried.book.title)?'을':'를'} 제자리에 꽂았어요.`); mpAct('put'); }
     carried=null; hand.visible=false; $('carry').hidden=true;
   }
   hooks.read=()=>{ if(carried) openBook(carried.book); };
@@ -2668,6 +2753,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       doorTarget=1; player.vx=player.vz=0;
       auto={t:-.7, dur:2.8, x0:player.x, z0:player.z, yaw0:player.yaw, pitch0:player.pitch, x1:0, z1:RL-3.4};
     } else { doorTarget = doorTarget ? 0 : 1; doorCloseT=6; }
+    mpAct('door'); mpDoor('m',doorTarget);
   };
   hooks.drop=()=>returnBook(false);
 
@@ -2907,7 +2993,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(hoverT>.06){ hoverT=0; if(!reading && !searchOpen && started && (locked || mouseInside)) setHover(pick()); else setHover(null); }
     for(const m of readable){ const tg=(hovered&&hovered.mesh===m)?1:0; m.userData.k=(m.userData.k||0)+(tg-(m.userData.k||0))*Math.min(1,dt*10); m.position.copy(m.userData.base).addScaledVector(m.userData.out,m.userData.k); }
 
-    if(doorCloseT>0){ doorCloseT-=dt; if(doorCloseT<=0 && !(Math.abs(player.z-RL)<1.2 && Math.abs(player.x)<DOOR_W)) doorTarget=0; else if(doorCloseT<=0) doorCloseT=1; }
+    if(doorCloseT>0){ doorCloseT-=dt; if(doorCloseT<=0 && !(Math.abs(player.z-RL)<1.2 && Math.abs(player.x)<DOOR_W) && !anyoneNear(0,RL,1.8)) doorTarget=0; else if(doorCloseT<=0) doorCloseT=1; }
     doorAmt += (doorTarget-doorAmt)*Math.min(1,dt*3.2);
     for(const lf of doorLeaves) lf.position.set(lf.userData.sd*(LEAF_W/2 + doorAmt*1.0),0,RL+.1);
     const nearIn = Math.abs(player.z-LOBBY_Z)<2.4 && Math.abs(player.x)<2.2;
@@ -2915,7 +3001,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(const h of innerLeaves) h.rotation.y = -h.userData.sd*innerAmt*1.45;
     for(const d of roomDoors){
       d.amt += (d.target-d.amt)*Math.min(1,dt*4); d.hinge.rotation.y = d.side*d.amt*1.5;
-      if(d.target){ const far=Math.hypot(player.x-d.x,player.z-d.zc)>2.4; d.openT = far ? d.openT+dt : 0; if(d.openT>4) d.target=0; }
+      if(d.target){ const far=!anyoneNear(d.x,d.zc,2.4); d.openT = far ? d.openT+dt : 0; if(d.openT>4) d.target=0; }
     }
     const rd = started && !auto && !reading && !searchOpen ? nearRoomDoor() : null;
     const ptxt = rd ? (rd.target ? '문 닫기' : rd.locked && !inRoom(rd) ? '도어록 비밀번호 누르기' : '문 열기') : '문 열기';
@@ -2942,7 +3028,6 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     updateTV(dt,t);
     mpUpdate(dt);
     // live CCTV: one feed per frame while the reader is in the office or watching full screen
-    avatar.position.set(player.x, player.y-(player.seat?.42:0), player.z); avatar.rotation.y=player.yaw;
     ledMat.color.setHex((t%1.4)<.7?0xff2a2a:0x400808);
     if(ccBoot<cctvCams.length) renderFeed(cctvCams[ccBoot++]);
     else if(cctvMode || (player.x>LOBBY_X && player.z>LOBBY_Z)){ ccIdx=(ccIdx+1)%cctvCams.length; renderFeed(cctvCams[ccIdx]); }
