@@ -1612,11 +1612,13 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function makeVisitor(look,color,name){ const f=makeFigure(look,0); f.tag=nameTag(name,color); f.g.add(f.tag); scene.add(f.g); return f; }
   function mpRecv(id,d){
-    if(!d || typeof d.x!=='number') return;
+    if(!d || typeof d.x!=='number' || !isFinite(d.x) || !isFinite(d.z)) return;
     let r=remotes.get(id);
+    if(r && typeof d.t==='number'){ if(d.t<=r.t) return; }
+    if(r) r.t=d.t;
     const name=String(d.n||'방문자').slice(0,16), color=MP_COLORS.includes(d.c)?d.c:MP_COLORS[0], look=/^[0-9.]{1,24}$/.test(d.l||'')?d.l:'0.0.0.0.0.0';
     if(r && (r.name!==name || r.color!==color || r.look!==look)){ scene.remove(r.v.g); const v=makeVisitor(look,color,name); v.g.position.copy(r.v.g.position); Object.assign(r,{v,name,color,look}); }
-    if(!r){ r={v:makeVisitor(look,color,name), name, color, look, x:d.x, y:d.y, z:d.z, r:d.r, ev:d.e}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
+    if(!r){ r={v:makeVisitor(look,color,name), name, color, look, x:d.x, y:d.y, z:d.z, r:d.r, ev:d.e, t:d.t}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
     if(d.e!==r.ev){ r.ev=d.e; if(d.k) r.v.act={kind:String(d.k),t:0}; }
     Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, carry:safeColor(d.b), read:safeColor(d.rd), seen:performance.now()});
   }
@@ -1624,24 +1626,40 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   function mpHud(){
     const el=$('mp'); if(!el) return;
     const n=remotes.size;
-    el.innerHTML = mp.status==='offline' ? '혼자 둘러보는 중 · 함께 보기 연결 안 됨'
+    el.innerHTML = mp.status==='offline' ? '혼자 둘러보는 중 · 함께 보기 서버에 연결하지 못했어요'
+      : mp.status==='connecting' ? '함께 보기 서버에 연결하는 중…'
       : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')} <kbd>N</kbd> 이름 <kbd>M</kbd> 모습`;
   }
+  // Everyone who opens the page joins one shared room on public MQTT brokers (WebSocket, so it works on any
+  // network). Two brokers at once: if one is down, the other still carries everyone; duplicates are dropped by timestamp.
+  const MP_TOPIC='hcstarrypark/gwanpyeong-library-3d/v2/';
+  const MP_BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+  mp.id=Math.random().toString(36).slice(2,10);
+  const mpClients=[];
   async function mpJoin(){
     mpHud();
-    try{
-      const {joinRoom}=await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
-      const room=joinRoom({appId:'hcstarrypark-gwanpyeong-library-3d'},'library-main-v1');
-      const act=room.makeAction('st'), door=room.makeAction('dr');
-      const pid=meta=>meta&&meta.peerId!==undefined?meta.peerId:meta;
-      act.onMessage=(d,meta)=>mpRecv(pid(meta),d);
-      door.onMessage=d=>mpDoorRecv(d);
-      room.onPeerJoin=()=>{ mp.force=true; };
-      room.onPeerLeave=id=>mpRemove(id);
-      mp.send=d=>act.send(d); mp.door=d=>door.send(d);
-      mp.status='online'; mpHud();
-      addEventListener('pagehide',()=>{ try{ room.leave(); }catch(e){} });
-    }catch(e){ console.warn('multiplayer unavailable',e); mp.status='offline'; mpHud(); }
+    let connect;
+    try{ const m=await import('https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.esm.js'); connect=m.connect||(m.default&&m.default.connect); }
+    catch(e){ console.warn('multiplayer unavailable',e); mp.status='offline'; mpHud(); return; }
+    const pub=(topic,obj)=>{ const msg=JSON.stringify(obj); for(const c of mpClients) if(c.connected) try{ c.publish(topic,msg,{qos:0}); }catch(e){} };
+    mp.send=st=>pub(MP_TOPIC+'st/'+mp.id,Object.assign(st,{id:mp.id,t:Date.now()}));
+    mp.door=d=>pub(MP_TOPIC+'dr',Object.assign(d,{id:mp.id}));
+    MP_BROKERS.forEach((url,i)=>{
+      let c; try{ c=connect(url,{clientId:'gwlib_'+mp.id+'_'+i, clean:true, keepalive:30, reconnectPeriod:4000, connectTimeout:8000,
+        will:{topic:MP_TOPIC+'st/'+mp.id, payload:JSON.stringify({id:mp.id,bye:1}), qos:0, retain:false}}); }catch(e){ return; }
+      mpClients.push(c);
+      c.on('connect',()=>{ c.subscribe([MP_TOPIC+'st/+',MP_TOPIC+'dr']); mp.status='online'; mp.force=true; mpHud(); });
+      c.on('message',(topic,payload)=>{
+        let d; try{ d=JSON.parse(String(payload)); }catch(e){ return; }
+        if(!d || typeof d.id!=='string' || d.id===mp.id) return;
+        if(topic.endsWith('/dr')) mpDoorRecv(d);
+        else if(d.bye) mpRemove(d.id);
+        else mpRecv(d.id.slice(0,16),d);
+      });
+      c.on('error',e=>console.warn('mqtt',url,e&&e.message));
+    });
+    setTimeout(()=>{ if(!mpClients.some(c=>c.connected)){ mp.status='offline'; mpHud(); } },12000);
+    addEventListener('pagehide',()=>{ for(const c of mpClients) try{ c.publish(MP_TOPIC+'st/'+mp.id,JSON.stringify({id:mp.id,bye:1})); c.end(); }catch(e){} });
   }
   hooks.rename=()=>{
     if(document.pointerLockElement) document.exitPointerLock();
