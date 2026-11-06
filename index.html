@@ -1496,6 +1496,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     x.strokeStyle='#1b1b1b'; x.lineWidth=7; x.lineCap='round'; x.beginPath(); x.arc(128,60,34,.22*Math.PI,.78*Math.PI); x.stroke();
   });
   const headGeo=new THREE.LatheGeometry([[0,-.15],[.12,-.15],[.158,-.135],[.172,-.1],[.172,.1],[.158,.135],[.12,.15],[0,.15]].map(([a,b])=>new THREE.Vector2(a,b)),28);
+  const hairTex=cvTex(128,128,(x,w,h)=>{ x.fillStyle='#fff'; x.fillRect(0,0,w,h); for(let i=0;i<70;i++){ x.fillStyle=`rgba(0,0,0,${.06+Math.random()*.14})`; x.fillRect(Math.random()*w,0,1+Math.random()*3,h); } });
+  hairTex.wrapS=hairTex.wrapT=THREE.RepeatWrapping;
   const faceGeo=new THREE.CylinderGeometry(.1735,.1735,.2,16,1,true,Math.PI-.9,1.8);
   const handGeo=new THREE.TorusGeometry(.062,.032,8,16,Math.PI*1.5);
   function makeFigure(lookStr,layer){
@@ -1520,17 +1522,34 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     // head with a painted face on the front (-z is forward)
     const hc=1.43; add(headGeo,skin,0,hc,0);
     const face=add(faceGeo,new THREE.MeshBasicMaterial({map:faceTex,transparent:true}),0,hc+.01,0); face.castShadow=false;
-    // hair styles
-    const cap=(r,len,tilt)=>{ const o=add(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI*len),hair,0,hc+.03,0); o.rotation.x=tilt; o.scale.y=.85; return o; };
-    if(L.style===0){ // messy swoop: full cap, a fringe swept to one side, tufts on top
-      cap(.198,.56,.22);
-      for(let i=0;i<6;i++){ const o=add(new THREE.BoxGeometry(.12,.075,.14),hair,-.13+i*.055,hc+.115-i*.006,-.115); o.rotation.set(-.35,0,-.35+i*.04); }
-      for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, o=add(new THREE.BoxGeometry(.11,.08,.11),hair,Math.cos(a)*.11,hc+.165,Math.sin(a)*.1+.02); o.rotation.set(Math.sin(a)*.5,a,-Math.cos(a)*.5); }
-      for(let i=0;i<5;i++){ const o=add(new THREE.BoxGeometry(.1,.11,.09),hair,-.14+i*.07,hc+.02,.16); o.rotation.z=(i-2)*.18; }
-    } else if(L.style===1){ cap(.185,.5,.3); }
-    else if(L.style===2){ cap(.19,.52,.25); add(new THREE.BoxGeometry(.36,.34,.09),hair,0,hc-.07,.14); for(const s of [-1,1]) add(new THREE.BoxGeometry(.06,.26,.2),hair,s*.17,hc-.03,.04); }
-    else if(L.style===3){ cap(.185,.5,.3); for(let i=0;i<7;i++){ const a=i/7*Math.PI*2, o=add(new THREE.ConeGeometry(.05,.15,6),hair,Math.cos(a)*.1,hc+.17,Math.sin(a)*.1+.02); o.rotation.set(Math.sin(a)*.6,0,-Math.cos(a)*.6); } }
-    else { cap(.18,.5,.45); const hat=solid(L.jacket||L.pants); add(new THREE.CylinderGeometry(.178,.186,.11,24),hat,0,hc+.13,0); add(new THREE.SphereGeometry(.178,24,8,0,Math.PI*2,0,Math.PI/2),hat,0,hc+.18,0).scale.y=.45; add(new THREE.BoxGeometry(.26,.025,.17),hat,0,hc+.09,-.22); }
+    // hair: a shell that hugs the flat-topped head, plus pieces for each style (-z is the face side)
+    const hm=new THREE.MeshStandardMaterial({color:new THREE.Color(L.hair).convertSRGBToLinear(),map:hairTex,roughness:.78,side:THREE.DoubleSide});
+    const shell=yBot=>add(new THREE.LatheGeometry([[0,.184],[.12,.184],[.166,.172],[.19,.147],[.198,.11],[.199,yBot]].map(([u,v])=>new THREE.Vector2(u,v)),32),hm,0,hc,0);
+    const back=(y0,y1,span=3.9,r=.199)=>add(new THREE.CylinderGeometry(r,r,y1-y0,32,1,true,-span/2,span),hm,0,hc+(y0+y1)/2,0);
+    const onHead=(geo,a,r,y,rx=0,rz=0)=>{ const o=add(geo,hm,Math.sin(a)*r,hc+y,Math.cos(a)*r); o.rotation.set(rx,a,rz); return o; };
+    if(L.style===0){ // side-swept fringe with a few chunky tufts on top
+      shell(.075); back(-.13,.08);
+      for(let i=0;i<6;i++) onHead(new THREE.BoxGeometry(.095,.075,.06),Math.PI-.8+i*.32,.195,.105-i*.014,.15,-.45);
+      for(const [x,z,ry] of [[-.07,-.05,.3],[.05,-.07,-.2],[.08,.06,.5],[-.06,.08,-.4],[0,0,0]]){ const o=add(new THREE.BoxGeometry(.13,.05,.12),hm,x,hc+.195,z); o.rotation.set(-.15,ry,.18); }
+    } else if(L.style===1){ shell(.085); back(-.06,.09); }
+    else if(L.style===2){ // long, straight bangs
+      shell(.075); back(-.38,.08,4.3,.201);
+      add(new THREE.CylinderGeometry(.202,.202,.07,24,1,true,Math.PI-.95,1.9),hm,0,hc+.115,0);
+      for(const sd of [-1,1]){ const o=add(new THREE.BoxGeometry(.05,.4,.17),hm,sd*.2,hc-.13,.03); o.rotation.z=sd*.05; }
+    } else if(L.style===3){ // spiky
+      shell(.08); back(-.08,.09);
+      const cone=new THREE.ConeGeometry(.05,.13,6);
+      add(cone,hm,0,hc+.24,0);
+      for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; onHead(cone,a,.12,.215,.55,0); }
+      for(let i=0;i<3;i++) onHead(cone,Math.PI-.4+i*.4,.18,.15,1.1,0);
+    } else { // baseball cap
+      back(-.07,.08);
+      const hat=solid(L.jacket||L.pants);
+      add(new THREE.CylinderGeometry(.205,.205,.1,32),hat,0,hc+.115,0);
+      add(new THREE.SphereGeometry(.205,32,10,0,Math.PI*2,0,Math.PI/2),hat,0,hc+.165,0).scale.y=.42;
+      add(new THREE.BoxGeometry(.3,.022,.17),hat,0,hc+.08,-.27);
+      add(new THREE.SphereGeometry(.025,10,8),hat,0,hc+.255,0);
+    }
     // arms: sleeve, skin forearm, C-shaped hand
     const arm=s=>{ const p=pivot(s*.45,1.25); add(new THREE.BoxGeometry(.27,.27,.29),outer,0,-.135,0,p); add(new THREE.BoxGeometry(.26,.33,.28),skin,0,-.43,0,p);
       const h=add(handGeo,skin,0,-.64,-.01,p); h.rotation.set(0,Math.PI/2,Math.PI/4); return p; };
