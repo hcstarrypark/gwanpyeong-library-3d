@@ -141,6 +141,13 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 #err{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:24px}
 @media (prefers-reduced-motion:reduce){.leaf{transition-duration:.01s}#reader.show .book{animation:none}}
 /* office keypad lock, manuscript writer, CCTV viewer */
+#ident{position:fixed;inset:0;z-index:12;display:grid;place-items:center;background:rgba(8,9,11,.72);backdrop-filter:blur(4px);padding:0 16px}
+.id-card input{width:100%;box-sizing:border-box;margin:16px 0 8px;font:600 17px var(--ui);padding:11px 14px;border-radius:12px;border:1px solid #3a404a;background:#0f1114;color:#eef3f8;outline:none;text-align:center}
+.id-card input:focus{border-color:#6fb7ff;box-shadow:0 0 0 3px rgba(111,183,255,.25)}
+.id-card .id-note{font-size:12px;color:var(--mist);line-height:1.5;margin:4px 0 14px}
+.id-card .id-row{display:flex;gap:8px;justify-content:center}
+.id-card .id-row button{font:700 14px var(--ui);border:0;border-radius:999px;padding:9px 20px;cursor:pointer}
+.id-ok{background:#2f8fe0;color:#fff}.id-cancel{background:rgba(255,255,255,.1);color:#fff}
 #lock,#writer{position:fixed;inset:0;z-index:11;display:grid;place-items:center;background:rgba(8,9,11,.72);backdrop-filter:blur(4px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .lk{width:min(300px,100%);background:linear-gradient(#2a2d33,#17191d);border-radius:22px;padding:22px 22px 16px;box-shadow:0 30px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);text-align:center;box-sizing:border-box}
 .lk b{display:block;font-size:18px;font-weight:900}
@@ -233,6 +240,13 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   </div>
 </div>
 <div id="toast" hidden></div>
+<div id="ident" hidden><div class="lk id-card" id="idPanel" role="dialog" aria-labelledby="idTitle">
+  <b id="idTitle">이름 정하기</b><small id="idSub">다른 방문자에게 이 이름이 보여요</small>
+  <input id="idInput" maxlength="16" autocomplete="off" spellcheck="false">
+  <div class="lk-msg" id="idMsg"></div>
+  <div class="id-note" id="idNote">🔑 보안 패스키는 이름 입력에서만 받을 수 있어요.</div>
+  <div class="id-row"><button type="button" class="id-cancel" id="idCancel">나중에</button><button type="button" class="id-ok" id="idOk">확인</button></div>
+</div></div>
 <div id="lock" hidden><div class="lk" id="lkPanel" role="dialog" aria-label="사무실 도어록">
   <b>사무실 도어록</b><small>관평도서관 직원 전용</small>
   <div class="lk-dots" id="lkDots"></div>
@@ -1236,7 +1250,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     $(id).hidden=false; $('paused').hidden=true;
     closeSearch=relock=>{ searchOpen=false; panelKey=null; $(id).hidden=true; if(onClose) onClose(); $('paused').hidden=locked; if(relock) tryLock(); };
   }
-  for(const id of ['lock','writer']) $(id).addEventListener('mousedown',e=>{ if(e.target===$(id)) closeSearch(true); });
+  for(const id of ['lock','writer','ident']) $(id).addEventListener('mousedown',e=>{ if(e.target===$(id)) closeSearch(true); });
 
   // hinged room doors: the leaf swings into the room; a closed leaf blocks the doorway
   const roomDoors=[];
@@ -1252,7 +1266,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     }
     const d={x,z0,z1,zc:(z0+z1)/2,side,label,locked,hinge,amt:0,target:0,openT:0};
     colliders.push(d.col={x0:x-.1,x1:x+.1,y0:0,y1:H,z0,z1,door:d});
-    act(hinge,()=>[`${label} 문`, d.target?'클릭하거나 E로 닫기' : (d.locked && !inRoom(d)) ? '잠겨 있어요 · 도어록 비밀번호를 누르세요' : '클릭하거나 E로 열기'],()=>useDoor(d));
+    act(hinge,()=>[`${label} 문`, d.target?'클릭하거나 E로 닫기' : (d.locked && !inRoom(d)) ? (hasPasskey()?'잠겨 있어요 · 도어록 비밀번호를 누르세요':'잠겨 있어요 · 보안 패스키가 필요해요') : '클릭하거나 E로 열기'],()=>useDoor(d));
     roomDoors.push(d); return d;
   }
   function useDoor(d){
@@ -1273,9 +1287,56 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     sign(.1,.25,100,250,(c,w,h)=>{ c.fillStyle='#16181c'; c.fillRect(0,0,w,h); c.fillStyle='#2f8fe0'; c.fillRect(14,14,w-28,26); c.fillStyle='#bfe3ff'; c.font='700 14px sans-serif'; c.textAlign='center'; c.fillText('LOCK',w/2,32);
       ['1','2','3','4','5','6','7','8','9','*','0','#'].forEach((k,i)=>{ const x=22+(i%3)*28, y=72+Math.floor(i/3)*42; c.fillStyle='#2a2d33'; c.beginPath(); c.arc(x,y,11,0,7); c.fill(); c.fillStyle='#e8eef5'; c.font='700 13px sans-serif'; c.fillText(k,x,y+5); });
       c.fillStyle='#9aa3ad'; c.font='700 10px sans-serif'; c.fillText('DIGITAL',w/2,h-10); },g,0,0,.041,0,.35,false);
-    act(g,()=>['사무실 도어록', officeDoor.target?'문이 열려 있어요':'클릭해서 비밀번호 누르기'],()=>{ if(officeDoor.target) toast('문이 이미 열려 있어요.'); else openLock(officeDoor); });
+    act(g,()=>['사무실 도어록', officeDoor.target?'문이 열려 있어요':hasPasskey()?'클릭해서 비밀번호 누르기':'보안 패스키가 있어야 누를 수 있어요'],()=>{ if(officeDoor.target) toast('문이 이미 열려 있어요.'); else openLock(officeDoor); });
   }
   const PASSCODE='xxxx';
+  /* ---------- security passkey: only issued from the name box, to the staff name with the staff password ---------- */
+  const PASSKEY_KEY='gwanpyeong-passkey-v1', STAFF_NAME='xxx', STAFF_HASH=5693007111875712;
+  const cyrb53=(str,seed=0)=>{ let h1=0xdeadbeef^seed, h2=0x41c6ce57^seed; for(let i=0,ch;i<str.length;i++){ ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); }
+    h1=Math.imul(h1^(h1>>>16),2246822507); h1^=Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507); h2^=Math.imul(h1^(h1>>>13),3266489909); return 4294967296*(2097151&h2)+(h1>>>0); };
+  function hasPasskey(){ if(hasPasskey.mem) return true; try{ return localStorage.getItem(PASSKEY_KEY)===String(STAFF_HASH); }catch(e){ return false; } }
+  function grantPasskey(){ hasPasskey.mem=true; try{ localStorage.setItem(PASSKEY_KEY,String(STAFF_HASH)); }catch(e){} }
+  let idMode='name', idFirst=false;
+  function idShow(mode,msg,cls){
+    idMode=mode; const inp=$('idInput');
+    if(mode==='name'){
+      $('idTitle').textContent=idFirst?'반가워요! 이름을 정해 주세요':'이름 바꾸기'; $('idSub').textContent='다른 방문자에게 이 이름이 보여요 (16자까지)';
+      inp.type='text'; inp.value=idFirst?'':mp.name; inp.placeholder=mp.name; $('idNote').hidden=false; $('idCancel').textContent=idFirst?'나중에':'취소';
+    } else {
+      $('idTitle').textContent='🔑 보안 확인'; $('idSub').textContent=STAFF_NAME+' 님, 보안 패스키를 받으려면 비밀번호를 입력하세요';
+      inp.type='password'; inp.value=''; inp.placeholder='비밀번호'; $('idNote').hidden=true; $('idCancel').textContent='돌아가기';
+    }
+    $('idMsg').textContent=msg||''; $('idMsg').className='lk-msg '+(cls||'');
+    setTimeout(()=>{ inp.focus(); inp.select(); },30);
+  }
+  function openIdent(first){
+    idFirst=!!first;
+    openPanel('ident',e=>{ if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); idSubmit(); } });
+    idShow('name');
+  }
+  function setMyName(nm){
+    mp.name=nm; mp.named=true; mp.force=true; mpSave(); mpHud();
+  }
+  function idSubmit(){
+    const v=$('idInput').value;
+    if(idMode==='name'){
+      const nm=v.trim().slice(0,16);
+      if(!nm){ idShow('name','이름을 한 글자 이상 적어 주세요.','bad'); return; }
+      if(nm===STAFF_NAME){ idShow('pass','비밀번호를 맞히면 보안 패스키를 드려요.'); return; }
+      setMyName(nm); closeSearch(true); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
+    } else {
+      if(cyrb53(v,108)===STAFF_HASH){
+        grantPasskey(); setMyName(STAFF_NAME); tone([784,988,1175,1568],.11,'sine',.05);
+        $('idMsg').textContent='확인됐어요 — 보안 패스키를 받았어요'; $('idMsg').className='lk-msg ok';
+        setTimeout(()=>{ closeSearch(true); toast('🔑 보안 패스키를 받았어요. 이제 사무실 도어록을 누를 수 있어요.'); },800);
+      } else {
+        tone([220,175],.16,'square',.04); idShow('pass','비밀번호가 틀렸어요. 보안 패스키를 드릴 수 없어요.','bad');
+        const p=$('idPanel'); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+      }
+    }
+  }
+  $('idOk').onclick=idSubmit;
+  $('idCancel').onclick=()=>{ if(idMode==='pass') idShow('name'); else { if(idFirst){ mp.named=true; mpSave(); } closeSearch(true); } };
   let lockDoor=null, lkCode='', lkBusy=false;
   $('lkPad').innerHTML=[['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['6','6'],['7','7'],['8','8'],['9','9'],['*','지움'],['0','0'],['#','확인']].map(([k,l])=>`<button type="button" data-k="${k}"${l.length>1?' class="fn"':''}>${l}</button>`).join('');
   $('lkPad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) lkPress(b.dataset.k); });
@@ -1285,6 +1346,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(msg!==undefined){ $('lkMsg').textContent=msg; $('lkMsg').className='lk-msg '+(cls||''); }
   }
   function openLock(d){
+    if(!hasPasskey()){ tone([220,175],.16,'square',.04); toast('🔒 보안 패스키가 없어서 도어록을 누를 수 없어요. 보안 패스키는 이름 입력에서만 받을 수 있어요.'); return; }
     lockDoor=d; lkCode=''; lkBusy=false; lkRender('비밀번호 4자리를 누르세요','');
     openPanel('lock',e=>{ if(/^[0-9]$/.test(e.key)) lkPress(e.key); else if(e.code==='Backspace') lkPress('*'); else if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); lkPress('#'); } });
   }
@@ -1585,8 +1647,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   { let saved=null; try{ saved=JSON.parse(localStorage.getItem(MP_KEY)||'null'); }catch(e){}
     mp.name = saved&&saved.name ? saved.name : '방문자 '+(1000+Math.floor(Math.random()*9000));
     mp.color = saved&&saved.color ? saved.color : MP_COLORS[Math.floor(Math.random()*MP_COLORS.length)];
-    mp.look = saved&&saved.look ? saved.look : randomLook(); }
-  const mpSave=()=>{ try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color,look:mp.look})); }catch(e){} };
+    mp.look = saved&&saved.look ? saved.look : randomLook(); mp.named=!!(saved&&saved.named); }
+  const mpSave=()=>{ try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color,look:mp.look,named:!!mp.named})); }catch(e){} };
   mpSave();
   let myFig=makeFigure(mp.look,1); scene.add(myFig.g);
   const remotes=new Map();
@@ -1628,7 +1690,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const n=remotes.size;
     el.innerHTML = mp.status==='offline' ? '혼자 둘러보는 중 · 함께 보기 서버에 연결하지 못했어요'
       : mp.status==='connecting' ? '함께 보기 서버에 연결하는 중…'
-      : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')} <kbd>N</kbd> 이름 <kbd>M</kbd> 모습`;
+      : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')}${hasPasskey()?' 🔑':''} <kbd>N</kbd> 이름 <kbd>M</kbd> 모습`;
   }
   // Everyone who opens the page joins one shared room on public MQTT brokers (WebSocket, so it works on any
   // network). Two brokers at once: if one is down, the other still carries everyone; duplicates are dropped by timestamp.
@@ -1661,13 +1723,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     setTimeout(()=>{ if(!mpClients.some(c=>c.connected)){ mp.status='offline'; mpHud(); } },12000);
     addEventListener('pagehide',()=>{ for(const c of mpClients) try{ c.publish(MP_TOPIC+'st/'+mp.id,JSON.stringify({id:mp.id,bye:1})); c.end(); }catch(e){} });
   }
-  hooks.rename=()=>{
-    if(document.pointerLockElement) document.exitPointerLock();
-    const v=prompt('다른 방문자에게 보일 이름 (16자까지)', mp.name); if(v===null) return;
-    const nm=v.trim().slice(0,16); if(!nm) return;
-    mp.name=nm; mp.color=MP_COLORS[(MP_COLORS.indexOf(mp.color)+1)%MP_COLORS.length]; mp.force=true; mpSave();
-    mpHud(); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
-  };
+  hooks.rename=()=>{ if(!searchOpen && !reading) openIdent(false); };
   hooks.relook=()=>{
     mp.look=randomLook(); mpSave(); mp.force=true;
     scene.remove(myFig.g); myFig=makeFigure(mp.look,1); scene.add(myFig.g);
@@ -2953,6 +3009,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   $('intro').classList.add('done'); setTimeout(()=>$('intro').hidden=true,900);
   started=true; $('paused').hidden=false;
   mpJoin();
+  if(!mp.named) setTimeout(()=>{ if(!searchOpen && !reading) openIdent(true); },1200);
   addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); });
 
   /* ============================================================
