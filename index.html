@@ -32,6 +32,9 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 #brand{background:rgba(40,36,32,.55);padding:7px 12px;border-radius:12px;backdrop-filter:blur(6px);position:fixed;left:max(16px,env(safe-area-inset-left,0px));top:calc(14px + env(safe-area-inset-top,0px));pointer-events:none;text-shadow:0 1px 6px rgba(0,0,0,.6)}
 #brand b{display:block;font-weight:900;font-size:17px;letter-spacing:-.01em}
 #brand small{font-weight:300;font-size:11px;letter-spacing:.24em;color:var(--mist)}
+#mp{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(50px + env(safe-area-inset-top,0px));font-size:12px;color:var(--chalk);background:rgba(13,15,18,.6);padding:5px 12px;border-radius:999px;pointer-events:none;backdrop-filter:blur(6px);max-width:calc(100vw - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mp:empty{display:none}
+#mp kbd{font:inherit;font-size:11px;border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:0 4px;margin-left:2px}
 #zone{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(14px + env(safe-area-inset-top,0px));font-size:12.5px;color:var(--chalk);background:rgba(13,15,18,.6);padding:6px 12px;border-radius:999px;pointer-events:none;backdrop-filter:blur(6px);transition:opacity .3s}
 #zone:empty{opacity:0}
 #legend{background:rgba(40,36,32,.5);padding:8px 12px;border-radius:12px;backdrop-filter:blur(6px);color:#e8e2d8!important;position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--mist);line-height:1.9;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.8)}
@@ -189,6 +192,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 <canvas id="c" aria-label="3D 도서관 내부"></canvas>
 <div id="brand"><b>관평도서관</b><small>GWANPYEONG LIBRARY</small></div>
 <div id="zone"></div>
+<div id="mp"></div>
 <div id="cross" style="display:none"></div>
 <div id="tip"><b id="tipTitle"></b><span id="tipSub"></span></div>
 <div id="legend"><div id="lgHead"><kbd>H</kbd> 조작법 <span id="lgState">보기</span></div><div id="lgBody" hidden>
@@ -196,6 +200,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div><kbd>좌클릭</kbd> 책 펼치기 · <kbd>← →</kbd> 넘기기 · <kbd>Esc</kbd> 덮기</div>
   <div><kbd>우클릭</kbd> 책 들기 · <kbd>R</kbd> 읽기 · <kbd>Q</kbd> 제자리에</div>
   <div>의자·벤치 클릭 앉기 · 사다리 마주 보고 <kbd>W</kbd> · <kbd>E</kbd> 문</div>
+  <div><kbd>N</kbd> 다른 방문자에게 보일 내 이름 바꾸기</div>
 </div></div>
 <div id="paused" hidden>화면을 클릭하면 시점이 고정돼요 · 드래그로도 둘러볼 수 있어요</div>
 <div id="touch"><button id="tUse" aria-label="문 열기">E 문</button><button id="tJump" aria-label="점프">점프</button><button id="tFwd" aria-label="앞으로">▲</button><button id="tBack" aria-label="뒤로">▼</button></div>
@@ -360,6 +365,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyR' && hooks.read && !e.repeat) hooks.read();
   if(e.code==='KeyQ' && hooks.drop && !e.repeat) hooks.drop();
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
+  if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
   if(e.code==='KeyH' && !e.repeat){ const bd=$('lgBody'); bd.hidden=!bd.hidden; $('lgState').textContent=bd.hidden?'보기':'숨기기'; }
   if(e.code==='Space' && !e.repeat) jumpQueued = true;
   keys.add(e.code);
@@ -1473,6 +1479,99 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const arm=new THREE.CylinderGeometry(.05,.05,.58,8);
     for(const [geo,m,x,y,z] of [[new THREE.CylinderGeometry(.19,.21,.62,16),shirt,0,1.17,0],[new THREE.BoxGeometry(.34,.86,.2),pants,0,.43,0],[new THREE.SphereGeometry(.12,16,12),skin,0,1.62,0],[new THREE.SphereGeometry(.127,16,12,0,Math.PI*2,0,Math.PI/2),hair,0,1.64,.01],[arm,shirt,-.25,1.16,0],[arm,shirt,.25,1.16,0]]){
       const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.layers.set(1); avatar.add(o); }
+  }
+
+  /* ---------- multiplayer: other visitors (WebRTC peer-to-peer via Trystero / Nostr signalling) ---------- */
+  const MP_COLORS=['#3f6fb5','#d9534f','#2e9e6a','#e0902a','#8a5bd1','#1fa3b0','#c7477f','#7a8f2a'];
+  const MP_KEY='gwanpyeong-mp-v1';
+  const mp={ name:'', color:'', send:null, status:'connecting', last:null, sendT:0, beatT:0, force:false };
+  { let saved=null; try{ saved=JSON.parse(localStorage.getItem(MP_KEY)||'null'); }catch(e){}
+    mp.name = saved&&saved.name ? saved.name : '방문자 '+(1000+Math.floor(Math.random()*9000));
+    mp.color = saved&&saved.color ? saved.color : MP_COLORS[Math.floor(Math.random()*MP_COLORS.length)];
+    try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color})); }catch(e){} }
+  const remotes=new Map();
+  function nameTag(name,color){
+    const c=document.createElement('canvas'); c.width=512; c.height=96; const x=c.getContext('2d');
+    x.font='bold 44px "Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+    const w=Math.min(500,x.measureText(name).width+86), l=(512-w)/2;
+    x.fillStyle='rgba(16,18,22,.72)'; x.beginPath(); x.moveTo(l+40,8); x.arcTo(l+w,8,l+w,88,40); x.arcTo(l+w,88,l,88,40); x.arcTo(l,88,l,8,40); x.arcTo(l,8,l+w,8,40); x.fill();
+    x.fillStyle=color; x.beginPath(); x.arc(l+38,48,13,0,Math.PI*2); x.fill();
+    x.fillStyle='#fff'; x.textBaseline='middle'; x.fillText(name,l+62,50,w-78);
+    const tex=new THREE.CanvasTexture(c); tex.encoding=THREE.sRGBEncoding;
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+    s.scale.set(1.3,.244,1); s.position.y=2.05; s.renderOrder=5; return s;
+  }
+  function makeVisitor(color,name){
+    const g=new THREE.Group(), shirt=solid(color), pants=solid('#2b2f38'), skin=solid('#e8c4a0'), hair=solid('#2a211b');
+    const add=(geo,m,x,y,z,p=g)=>{ const o=new THREE.Mesh(geo,m); o.position.set(x,y,z); o.castShadow=true; p.add(o); return o; };
+    add(new THREE.CylinderGeometry(.19,.21,.62,16),shirt,0,1.17,0);
+    add(new THREE.SphereGeometry(.12,16,12),skin,0,1.62,0);
+    add(new THREE.SphereGeometry(.127,16,12,0,Math.PI*2,0,Math.PI/2),hair,0,1.64,.01);
+    add(new THREE.BoxGeometry(.12,.05,.06),skin,0,1.6,-.12);   // nose: shows which way they face
+    const limb=(x,y,len,r,m)=>{ const p=new THREE.Group(); p.position.set(x,y,0); g.add(p); add(new THREE.CylinderGeometry(r,r,len,8),m,0,-len/2,0,p); return p; };
+    const armL=limb(-.25,1.45,.58,.05,shirt), armR=limb(.25,1.45,.58,.05,shirt);
+    const legL=limb(-.09,.86,.86,.08,pants), legR=limb(.09,.86,.86,.08,pants);
+    const tag=nameTag(name,color); g.add(tag);
+    scene.add(g); return {g,armL,armR,legL,legR,tag};
+  }
+  function mpRecv(id,d){
+    if(!d || typeof d.x!=='number') return;
+    let r=remotes.get(id);
+    const name=String(d.n||'방문자').slice(0,16), color=MP_COLORS.includes(d.c)?d.c:MP_COLORS[0];
+    if(r && (r.name!==name || r.color!==color)){ scene.remove(r.v.g); r=null; }
+    if(!r){ r={v:makeVisitor(color,name), name, color, x:d.x, y:d.y, z:d.z, r:d.r, phase:0}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
+    Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, seen:performance.now()});
+  }
+  function mpRemove(id){ const r=remotes.get(id); if(!r) return; scene.remove(r.v.g); remotes.delete(id); mpHud(); toast(`${r.name} 님이 나갔어요.`); }
+  function mpHud(){
+    const el=$('mp'); if(!el) return;
+    const n=remotes.size;
+    el.innerHTML = mp.status==='offline' ? '혼자 둘러보는 중 · 함께 보기 연결 안 됨'
+      : `<b>함께 있는 사람 ${n+1}명</b> · 나: <span style="color:${mp.color}">●</span> ${mp.name.replace(/[<>&]/g,'')} <kbd>N</kbd>`;
+  }
+  async function mpJoin(){
+    mpHud();
+    try{
+      const {joinRoom}=await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
+      const room=joinRoom({appId:'hcstarrypark-gwanpyeong-library-3d'},'library-main-v1');
+      const act=room.makeAction('st');
+      act.onMessage=(d,meta)=>mpRecv(meta&&meta.peerId!==undefined?meta.peerId:meta,d);
+      room.onPeerJoin=()=>{ mp.force=true; };
+      room.onPeerLeave=id=>mpRemove(id);
+      mp.send=d=>act.send(d);
+      mp.status='online'; mpHud();
+      addEventListener('pagehide',()=>{ try{ room.leave(); }catch(e){} });
+    }catch(e){ console.warn('multiplayer unavailable',e); mp.status='offline'; mpHud(); }
+  }
+  hooks.rename=()=>{
+    if(document.pointerLockElement) document.exitPointerLock();
+    const v=prompt('다른 방문자에게 보일 이름 (16자까지)', mp.name); if(v===null) return;
+    const nm=v.trim().slice(0,16); if(!nm) return;
+    mp.name=nm; mp.color=MP_COLORS[(MP_COLORS.indexOf(mp.color)+1)%MP_COLORS.length]; mp.force=true;
+    try{ localStorage.setItem(MP_KEY,JSON.stringify({name:mp.name,color:mp.color})); }catch(e){}
+    mpHud(); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
+  };
+  // sending runs on a timer, not the render loop, so a backgrounded tab still says "I'm here"
+  setInterval(()=>{
+    const now=performance.now();
+    for(const [id,r] of remotes) if(now-r.seen>10000) mpRemove(id);
+    if(!mp.send) return;
+    const st={x:+player.x.toFixed(2), y:+(player.y-(player.seat?.42:0)).toFixed(2), z:+player.z.toFixed(2), r:+player.yaw.toFixed(2), s:player.seat?1:0, n:mp.name, c:mp.color};
+    const key=st.x+','+st.y+','+st.z+','+st.r+','+st.s;
+    if(mp.force || key!==mp.last || now-mp.beatT>2000){ mp.force=false; mp.last=key; mp.beatT=now; try{ mp.send(st); }catch(e){} }
+  },100);
+  function mpUpdate(dt){
+    for(const [id,r] of remotes){
+      const k=Math.min(1,dt*10), px=r.x, pz=r.z;
+      r.x+=(r.tx-r.x)*k; r.y+=(r.ty-r.y)*k; r.z+=(r.tz-r.z)*k;
+      let dr=r.tr-r.r; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); r.r+=dr*k;
+      const sp=Math.hypot(r.x-px,r.z-pz)/Math.max(dt,1e-3);
+      r.phase+=sp*dt*4.2;
+      const sw=Math.sin(r.phase)*Math.min(1,sp/1.5)*.6, v=r.v;
+      v.g.position.set(r.x,r.y,r.z); v.g.rotation.y=r.r;
+      v.armL.rotation.x=sw; v.armR.rotation.x=-sw;
+      if(r.seated){ v.legL.rotation.x=v.legR.rotation.x=1.45; } else { v.legL.rotation.x=-sw; v.legR.rotation.x=sw; }
+    }
   }
   let cctvMode=false, ccView=0, ccIdx=0, ccBoot=0, ccTimeT=0;
   function renderFeed(c){
@@ -2730,6 +2829,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
 
   $('intro').classList.add('done'); setTimeout(()=>$('intro').hidden=true,900);
   started=true; $('paused').hidden=false;
+  mpJoin();
   addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); });
 
   /* ============================================================
@@ -2840,6 +2940,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
 
     
     updateTV(dt,t);
+    mpUpdate(dt);
     // live CCTV: one feed per frame while the reader is in the office or watching full screen
     avatar.position.set(player.x, player.y-(player.seat?.42:0), player.z); avatar.rotation.y=player.yaw;
     ledMat.color.setHex((t%1.4)<.7?0xff2a2a:0x400808);
