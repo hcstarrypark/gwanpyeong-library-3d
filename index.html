@@ -1299,21 +1299,20 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       c.fillStyle='#9aa3ad'; c.font='700 10px sans-serif'; c.fillText('DIGITAL',w/2,h-10); },g,0,0,.041,0,.35,false);
     act(g,()=>[`${door.label} 도어록`, door.target?'문이 열려 있어요':hasPasskey()?'클릭해서 비밀번호 누르기':'보안 패스키가 있어야 누를 수 있어요'],()=>{ if(door.target) toast('문이 이미 열려 있어요.'); else openLock(door); });
   }
-  const PASSCODE='xxxx';
   /* ---------- security passkey: only issued from the name box, to the staff name with the staff password ---------- */
-  const PASSKEY_KEY='gwanpyeong-passkey-v1', STAFF_NAME='xxx', STAFF_HASH=5693007111875712;
+  const PASSKEY_KEY='gwanpyeong-passkey-v1', NAME_HASH=6686325643735752, STAFF_HASH=5693007111875712;   // only hashes are kept: the name, the passwords and the door codes never appear as text
   const cyrb53=(str,seed=0)=>{ let h1=0xdeadbeef^seed, h2=0x41c6ce57^seed; for(let i=0,ch;i<str.length;i++){ ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); }
     h1=Math.imul(h1^(h1>>>16),2246822507); h1^=Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507); h2^=Math.imul(h1^(h1>>>13),3266489909); return 4294967296*(2097151&h2)+(h1>>>0); };
   function hasPasskey(){ if(hasPasskey.mem) return true; try{ return localStorage.getItem(PASSKEY_KEY)===String(STAFF_HASH); }catch(e){ return false; } }
   function grantPasskey(){ hasPasskey.mem=true; try{ localStorage.setItem(PASSKEY_KEY,String(STAFF_HASH)); }catch(e){} }
-  let idMode='name', idFirst=false;
+  let idMode='name', idFirst=false, idName='';
   function idShow(mode,msg,cls){
     idMode=mode; const inp=$('idInput');
     if(mode==='name'){
       $('idTitle').textContent=idFirst?'반가워요! 이름을 정해 주세요':'이름 바꾸기'; $('idSub').textContent='다른 방문자에게 이 이름이 보여요 (16자까지)';
       inp.type='text'; inp.value=idFirst?'':mp.name; inp.placeholder=mp.name; $('idNote').hidden=false; $('idCancel').textContent=idFirst?'나중에':'취소';
     } else {
-      $('idTitle').textContent='🔑 보안 확인'; $('idSub').textContent=STAFF_NAME+' 님, 보안 패스키를 받으려면 비밀번호를 입력하세요';
+      $('idTitle').textContent='🔑 보안 확인'; $('idSub').textContent=idName+' 님, 보안 패스키를 받으려면 비밀번호를 입력하세요';
       inp.type='password'; inp.value=''; inp.placeholder='비밀번호'; $('idNote').hidden=true; $('idCancel').textContent='돌아가기';
     }
     $('idMsg').textContent=msg||''; $('idMsg').className='lk-msg '+(cls||'');
@@ -1332,11 +1331,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(idMode==='name'){
       const nm=v.trim().slice(0,16);
       if(!nm){ idShow('name','이름을 한 글자 이상 적어 주세요.','bad'); return; }
-      if(nm===STAFF_NAME){ idShow('pass','비밀번호를 맞히면 보안 패스키를 드려요.'); return; }
+      if(cyrb53(nm,2903)===NAME_HASH){ idName=nm; idShow('pass','비밀번호를 맞히면 보안 패스키를 드려요.'); return; }
       setMyName(nm); closeSearch(true); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
     } else {
       if(cyrb53(v,108)===STAFF_HASH){
-        grantPasskey(); setMyName(STAFF_NAME); tone([784,988,1175,1568],.11,'sine',.05);
+        grantPasskey(); setMyName(idName); tone([784,988,1175,1568],.11,'sine',.05);
         $('idMsg').textContent='확인됐어요 — 보안 패스키를 받았어요'; $('idMsg').className='lk-msg ok';
         setTimeout(()=>{ closeSearch(true); toast('🔑 보안 패스키(관리자 키)를 받았어요. 이제 엘리베이터에 4층 버튼이 보이고, 도어록도 누를 수 있어요.'); },800);
       } else {
@@ -1370,7 +1369,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function lkCheck(){
     if(lkBusy) return;
-    if(lkCode===(lockDoor.code||PASSCODE)){
+    if(cyrb53(lkCode,4417)===lockDoor.codeHash){
       lkBusy=true; lkRender('띠리릭 — 문이 열렸어요','ok'); tone([784,988,1175,1568],.11,'sine',.05);
       setTimeout(()=>{ closeSearch(true); lockDoor.target=1; lockDoor.openT=0; mpAct('door'); mpDoor(roomDoors.indexOf(lockDoor),1); toast(`${lockDoor.label} 문이 열렸어요. 들어가 보세요.`); },700);
     } else {
@@ -1431,7 +1430,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const iw=(x0,x1,z0,z1,y0=R4,y1=RC)=>{ slab(x0,x1,y0,y1,z0,z1,X.paint); collideBox(x0,x1,y0,y1,z0,z1); };
     iw(RX0,7.1,15.95,16.05); iw(7.1,7.3,15.95,18.14); iw(7.1,7.3,19.36,RZ1-.1); iw(7.1,7.3,18.14,19.36,R4+2.18,RC);
   }
-  const ctlDoor=roomDoor(7.2,18.2,19.3,1,'종합관리실',true,R4); ctlDoor.code='xxxx';
+  const ctlDoor=roomDoor(7.2,18.2,19.3,1,'종합관리실',true,R4); ctlDoor.codeHash=3988133804443689;
   keypadAt(7.08,R4+1.24,19.62,-Math.PI/2,ctlDoor);
   sign(1.1,.34,440,136,(c,w,h)=>{ c.fillStyle='#1d2b3a'; c.fillRect(0,0,w,h); c.fillStyle='#ff5a36'; c.fillRect(0,0,14,h); c.fillStyle='#fff'; c.font='900 46px "Noto Sans KR", sans-serif'; c.fillText('종합관리실',34,64); c.fillStyle='#ffc531'; c.font='700 28px "Noto Sans KR", sans-serif'; c.fillText('관계자 외 출입금지',34,112); },scene,7.09,R4+2.5,18.75,-Math.PI/2,.15);
   sign(.6,.42,240,168,(c,w,h)=>{ c.fillStyle='#fff7d6'; c.fillRect(0,0,w,h); c.fillStyle='#d63b3b'; c.font='900 30px "Noto Sans KR", sans-serif'; c.fillText('보안 구역',22,50); c.fillStyle='#333'; c.font='500 20px "Noto Sans KR", sans-serif'; c.fillText('CCTV 녹화 중',22,96); c.fillText('비밀번호 노출 주의',22,132); },scene,RX0+.02,R4+1.6,18.8,Math.PI/2,.05);
