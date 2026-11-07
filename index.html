@@ -1355,6 +1355,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(msg!==undefined){ $('lkMsg').textContent=msg; $('lkMsg').className='lk-msg '+(cls||''); }
   }
   function openLock(d){
+    if(d.shutter && d.shutter()){ tone([220,175],.16,'square',.04); toast('🔒 보안 셔터가 내려져 있어서 들어갈 수 없어요.'); return; }
     if(!hasPasskey()){ tone([220,175],.16,'square',.04); toast('🔒 보안 패스키가 없어서 도어록을 누를 수 없어요. 보안 패스키는 이름 입력에서만 받을 수 있어요.'); return; }
     lockDoor=d; lkCode=''; lkBusy=false; $('lkTitle').textContent=`${d.label} 도어록`; lkRender('비밀번호 4자리를 누르세요','');
     openPanel('lock',e=>{ if(/^[0-9]$/.test(e.key)) lkPress(e.key); else if(e.code==='Backspace') lkPress('*'); else if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); lkPress('#'); } });
@@ -1430,8 +1431,36 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const iw=(x0,x1,z0,z1,y0=R4,y1=RC)=>{ slab(x0,x1,y0,y1,z0,z1,X.paint); collideBox(x0,x1,y0,y1,z0,z1); };
     iw(RX0,7.1,15.95,16.05); iw(7.1,7.3,15.95,18.14); iw(7.1,7.3,19.36,RZ1-.1); iw(7.1,7.3,18.14,19.36,R4+2.18,RC);
   }
-  const ctlDoor=roomDoor(7.2,18.2,19.3,1,'종합관리실',true,R4); ctlDoor.codeHash=3988133804443689;
-  keypadAt(7.08,R4+1.24,19.62,-Math.PI/2,ctlDoor);
+  const ctlDoor=roomDoor(7.2,18.2,19.3,1,'종합관리실',true,R4); ctlDoor.shutter=()=>shutter.target===1; ctlDoor.codeHash=3988133804443689;
+  keypadAt(7.08,R4+1.24,19.95,-Math.PI/2,ctlDoor);
+  // steel roller shutter on the vestibule side of the inner door; only the switch inside the control room moves it
+  const shutter={k:0,target:0,H:2.3};
+  { const slatTex=ctex(128,256,(g,w,h)=>{ g.fillStyle='#8e959c'; g.fillRect(0,0,w,h); for(let y=0;y<h;y+=16){ g.fillStyle='#b4bac0'; g.fillRect(0,y,w,9); g.fillStyle='#6c737a'; g.fillRect(0,y+9,w,2); } });
+    slatTex.wrapS=slatTex.wrapT=THREE.RepeatWrapping; slatTex.repeat.set(1,3);
+    const geo=new THREE.BoxGeometry(.04,shutter.H,1.7); geo.translate(0,-shutter.H/2,0);
+    shutter.mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:slatTex,roughness:.45,metalness:.55}));
+    shutter.mesh.position.set(6.99,R4+shutter.H,18.75); shutter.mesh.scale.y=.001; scene.add(shutter.mesh);
+    slab(6.88,7.1,R4+shutter.H,R4+shutter.H+.3,17.85,19.65,solid('#5d636a'));
+    for(const z of [17.88,19.62]) slab(6.94,7.08,R4,R4+shutter.H,z-.03,z+.03,X.steel);
+    shutter.col={x0:6.9,x1:7.08,y0:R4+shutter.H,y1:R4+shutter.H,z0:17.9,z1:19.6}; colliders.push(shutter.col);
+    // the switch, inside the control room beside the door
+    const sw=new THREE.Group(); sw.position.set(7.31,R4+1.3,20.3); sw.rotation.y=Math.PI/2; scene.add(sw);
+    box(.26,.36,.04,solid('#2a2d31'),0,0,.02,sw);
+    sign(.22,.08,176,64,(c,w,h)=>{ c.fillStyle='#ffc531'; c.fillRect(0,0,w,h); c.fillStyle='#1d1e22'; c.font='900 30px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('보안 셔터',w/2,44); },sw,0,.12,.042,0,.2,false);
+    shutter.lamp=new THREE.Mesh(new THREE.CircleGeometry(.05,24),new THREE.MeshBasicMaterial({color:0x2ecc71})); shutter.lamp.position.set(0,-.05,.043); sw.add(shutter.lamp);
+    act(sw,()=>['보안 셔터 스위치', shutter.target?'셔터가 내려져 있어요 · 클릭하면 올려요':'클릭하면 문 앞에 셔터를 내려 아무도 못 들어와요'],()=>setShutter(shutter.target?0:1,true));
+  }
+  function setShutter(t,mine){
+    if(shutter.target===t) return; shutter.target=t;
+    shutter.lamp.material.color.setHex(t?0xe74c3c:0x2ecc71);
+    if(mine){ tone(t?[440,330]:[330,440],.14,'sawtooth',.03); toast(t?'보안 셔터를 내렸어요. 이제 밖에서는 아무도 들어올 수 없어요.':'보안 셔터를 올렸어요.'); mpDoor('s',t); }
+  }
+  function shutterUpdate(dt){
+    shutter.k+=((shutter.target?1:0)-shutter.k)*Math.min(1,dt*1.6);
+    if(Math.abs(shutter.k-shutter.target)<.002) shutter.k=shutter.target;
+    shutter.mesh.scale.y=Math.max(.001,shutter.k); shutter.mesh.visible=shutter.k>.002;
+    shutter.col.y0=R4+shutter.H*(1-shutter.k);
+  }
   sign(1.1,.34,440,136,(c,w,h)=>{ c.fillStyle='#1d2b3a'; c.fillRect(0,0,w,h); c.fillStyle='#ff5a36'; c.fillRect(0,0,14,h); c.fillStyle='#fff'; c.font='900 46px "Noto Sans KR", sans-serif'; c.fillText('종합관리실',34,64); c.fillStyle='#ffc531'; c.font='700 28px "Noto Sans KR", sans-serif'; c.fillText('관계자 외 출입금지',34,112); },scene,7.09,R4+2.5,18.75,-Math.PI/2,.15);
   sign(.6,.42,240,168,(c,w,h)=>{ c.fillStyle='#fff7d6'; c.fillRect(0,0,w,h); c.fillStyle='#d63b3b'; c.font='900 30px "Noto Sans KR", sans-serif'; c.fillText('보안 구역',22,50); c.fillStyle='#333'; c.font='500 20px "Noto Sans KR", sans-serif'; c.fillText('CCTV 녹화 중',22,96); c.fillText('비밀번호 노출 주의',22,132); },scene,RX0+.02,R4+1.6,18.8,Math.PI/2,.05);
   { const ex=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.5,16),solid('#d63b3b')); ex.position.set(RX0+.2,R4+.25,16.4); scene.add(ex); }
@@ -1710,6 +1739,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   function mpDoor(id,t){ if(mp.door) try{ mp.door({d:id,t}); }catch(e){} }
   function mpDoorRecv(m){
     if(!m) return;
+    if(m.d==='s'){ setShutter(m.t?1:0,false); return; }
     if(m.d==='m'){ doorTarget=m.t?1:0; if(m.t) doorCloseT=6; }
     else { const D=roomDoors[m.d|0]; if(D){ D.target=m.t?1:0; D.openT=0; } }
   }
@@ -1734,6 +1764,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(r) r.t=d.t;
     const name=String(d.n||'방문자').slice(0,16), color=MP_COLORS.includes(d.c)?d.c:MP_COLORS[0], look=/^[0-9.]{1,24}$/.test(d.l||'')?d.l:'0.0.0.0.0.0';
     if(r && (r.name!==name || r.color!==color || r.look!==look)){ scene.remove(r.v.g); const v=makeVisitor(look,color,name); v.g.position.copy(r.v.g.position); Object.assign(r,{v,name,color,look}); }
+    if(!r && shutter.target) setTimeout(()=>mpDoor('s',1),300);
     if(!r){ r={v:makeVisitor(look,color,name), name, color, look, x:d.x, y:d.y, z:d.z, r:d.r, ev:d.e, t:d.t}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
     if(d.e!==r.ev){ r.ev=d.e; if(d.k) r.v.act={kind:String(d.k),t:0}; }
     Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, carry:safeColor(d.b), read:safeColor(d.rd), seen:performance.now()});
@@ -3071,10 +3102,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   colliders.push(carFloorCol);
   const hallDoors=ELEV_Y.map(()=>({amt:0})), hallLeaves=ELEV_Y.map(()=>[]), floorSigns=[];
   const brushed=new THREE.MeshStandardMaterial({color:0xc6cacd,roughness:.32,metalness:.85});
-  const indTex=f=>ctex(160,64,(c,w,h)=>{ c.fillStyle='#111'; c.fillRect(0,0,w,h); c.fillStyle='#ff6a2a'; c.font='900 46px monospace'; c.textAlign='center'; c.fillText(String(f+1),w/2,48); c.font='700 28px monospace'; if(elev.moving) c.fillText(elev.pending>elev.floor?'▲':'▼',w-26,44); });
+  const indTex=f=>ctex(160,64,(c,w,h)=>{ c.fillStyle='#111'; c.fillRect(0,0,w,h); c.fillStyle='#ff6a2a'; c.font='900 46px monospace'; c.textAlign='center'; c.fillText(String(Math.min(f,2)+1),w/2,48); c.font='700 28px monospace'; if(elev.moving) c.fillText(elev.pending>elev.floor?'▲':'▼',w-26,44); });
   // shaft: closed from the lobby floor to the top ceiling so the car never shows the void between floors
-  slab(SHAFT.x0,SHAFT.x0+.12,0,TOPC,SHAFT.z0,SHAFT.z1,[X.paint,X.paint,X.paint,X.paint,X.paint,X.paint]);
-  slab(SHAFT.x1-.05,SHAFT.x1+.05,0,TOPC,SHAFT.z0,SHAFT.z1,X.white);
+  slab(SHAFT.x0,SHAFT.x0+.12,0,TOPC,SHAFT.z0+.1,SHAFT.z1,[X.paint,X.paint,X.paint,X.paint,X.paint,X.paint]);
+  slab(SHAFT.x1-.05,SHAFT.x1+.05,0,TOPC,SHAFT.z0+.1,SHAFT.z1,X.white);
   for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]) slab(a,b,0,TOPC,SHAFT.z0,SHAFT.z0+.1,brushed);
   ELEV_Y.forEach((y,f)=>slab(SHAFT.dx0,SHAFT.dx1,y+2.15,f<NF-1?ELEV_Y[f+1]:TOPC,SHAFT.z0,SHAFT.z0+.1,brushed));
   ELEV_Y.forEach((y0,f)=>{
@@ -3112,7 +3143,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(f===elev.floor){ elev.doorT=1; elev.openT=0; tone([988],.08,'sine',.03); return; }
     elev.pending=f; elev.doorT=0; tone([880],.06,'sine',.03);
     if(inCar()) toast(`${f+1}층으로 ${f>elev.floor?'올라가요':'내려가요'}…`);
-    else toast(`엘리베이터가 ${elev.floor+1}층에서 오고 있어요.`);
+    else toast(`엘리베이터가 ${Math.min(elev.floor,2)+1}층에서 오고 있어요.`);
   }
   function updateElevator(dt){
     const doorway=Math.abs(player.x-(SHAFT.dx0+SHAFT.dx1)/2)<.65 && Math.abs(player.z-SHAFT.z0)<.32 && Math.abs(player.y-elev.y)<.6;
@@ -3597,7 +3628,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function frame(){
     const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime;
-    physics(dt); updateElevator(dt);
+    physics(dt); updateElevator(dt); shutterUpdate(dt);
     // camera: smooth small step-ups, dip on landing
     const sp=Math.hypot(player.vx,player.vz); if(player.ground) player.bob+=sp*dt*3.1;
     player.land=Math.max(0,player.land-dt*.6);
