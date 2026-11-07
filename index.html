@@ -1418,11 +1418,15 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   { const ctlFloor=new THREE.MeshStandardMaterial({color:new THREE.Color('#4a5563').convertSRGBToLinear(),roughness:.9,map:texFelt});
     for(const [a,b,c,d] of [[RX0,RX1,RZ0,SHAFT.z0],[RX0,SHAFT.x0,SHAFT.z0,RZ1],[SHAFT.x1,RX1,SHAFT.z0,RZ1]]){ slab(a,b,BH,R4,c,d,[X.white,X.white,ctlFloor,X.white,X.white,X.white],1.6); collideBox(a,b,BH-.3,R4,c,d); }
     slab(RX0-.1,RX1+.1,RC,RC+.2,RZ0-.1,RZ1,X.concrete);
-    const rw=(x0,x1,z0,z1)=>{ slab(x0,x1,R4,RC,z0,z1,X.white); collideBox(x0,x1,R4,RC,z0,z1); };
-    rw(RX0-.1,RX0,RZ0-.1,RZ1); rw(RX0-.1,RX1+.1,RZ0-.1,RZ0); rw(RX0,RX1,RZ1-.1,RZ1);
-    const WIN=[[9.2,11.6,R4+1.0,R4+2.6],[13.0,15.4,R4+1.0,R4+2.6]];
-    holedWall(RZ0-.1,RZ1,R4,RC,WIN,(a,b,c,d)=>{ slab(RX1,RX1+.1,c,d,a,b,X.white); collideBox(RX1,RX1+.1,c,d,a,b); });
-    WIN.forEach(([a,b,c,d])=>windowIn(RX1,(c+d)/2,(a+b)/2,b-a,d-c,-Math.PI/2,.3));
+    // seen from outside it is just a louvred rooftop plant enclosure: no windows, no light, no name
+    const louvre=new THREE.MeshStandardMaterial({map:ctex(256,256,(g,w,h)=>{ g.fillStyle='#9ea3a8'; g.fillRect(0,0,w,h); for(let y=0;y<h;y+=16){ g.fillStyle='#c3c7cb'; g.fillRect(0,y,w,7); g.fillStyle='#7d8287'; g.fillRect(0,y+7,w,3); } g.fillStyle='#6e7378'; for(let x=0;x<w;x+=128) g.fillRect(x,0,4,h); }),roughness:.55,metalness:.35});
+    const rw=(x0,x1,z0,z1,out)=>{ const m=[X.paint,X.paint,X.paint,X.paint,X.paint,X.paint]; m[out]=louvre; slab(x0,x1,R4,RC,z0,z1,m,2.4); collideBox(x0,x1,R4,RC,z0,z1); };
+    rw(RX0-.1,RX0,RZ0-.1,RZ1,1); rw(RX0-.1,RX1+.1,RZ0-.1,RZ0,5); rw(RX0,RX1,RZ1-.1,RZ1,4); rw(RX1,RX1+.1,RZ0-.1,RZ1,0);
+    slab(RX0-.1,RX1+.1,BH+.08,R4,RZ0-.1,RZ0,X.concrete);
+    // a few outdoor condenser units on the roof deck make it read as a plant area
+    for(const [x,z] of [[3.2,5.4],[5.6,5.4],[8.0,5.4],[10.4,5.4]]){ const u=new THREE.Group(); u.position.set(x,BH,z); scene.add(u);
+      box(1.6,1.0,.8,solid('#d9dcdf'),0,.5,0,u); const fan=new THREE.Mesh(new THREE.CircleGeometry(.32,24),solid('#4a4f55')); fan.position.set(0,.55,.401); u.add(fan); box(1.7,.06,.9,solid('#8d9297'),0,.03,0,u); }
+    sign(1.0,.32,400,128,(c,w,h)=>{ c.fillStyle='#f4f4f2'; c.fillRect(0,0,w,h); c.fillStyle='#4a4f55'; c.font='800 52px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('기계실',w/2,86); },scene,RX0-.11,R4+2.2,12,-Math.PI/2,0,false);
     // vestibule walls; the inner door (중문) is solid so nobody can see in
     const iw=(x0,x1,z0,z1,y0=R4,y1=RC)=>{ slab(x0,x1,y0,y1,z0,z1,X.paint); collideBox(x0,x1,y0,y1,z0,z1); };
     iw(RX0,7.1,15.95,16.05); iw(7.1,7.3,15.95,18.14); iw(7.1,7.3,19.36,RZ1-.1); iw(7.1,7.3,18.14,19.36,R4+2.18,RC);
