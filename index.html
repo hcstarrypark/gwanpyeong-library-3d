@@ -11,8 +11,8 @@
   --oak:#d9b27a;       /* white-oak accent */
   --chalk:#f4f2ee;
   --mist:#a9adb3;
-  --paper:#f3ecdc;
-  --ink:#24211d;
+  --paper:#fbfbf8;
+  --ink:#1d1e22;
   --display:'Nanum Myeongjo','AppleMyungjo','Batang',serif;
   --ui:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   color-scheme:dark;
@@ -64,32 +64,32 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 #reader{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(8,9,11,.78);backdrop-filter:blur(4px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 #reader.show .book{animation:bookIn .45s cubic-bezier(.2,.8,.2,1)}
 @keyframes bookIn{from{transform:translateY(30px) scale(.94);opacity:0}to{transform:none;opacity:1}}
-.book{position:relative;perspective:2400px;padding:12px;border-radius:6px;background:var(--cover,#333);box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.08),inset 0 0 40px rgba(0,0,0,.35)}
+.book{position:relative;perspective:2400px;padding:10px;border-radius:10px;background:var(--cover,#333);box-shadow:0 24px 70px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.1)}
 .spread{position:relative;width:100%;height:100%;display:flex}
-.page{position:relative;flex:1;height:100%;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.4),transparent 60%),linear-gradient(var(--paper),#e9dfc8);color:var(--ink);font-family:var(--display);box-sizing:border-box}
-.page.left{border-radius:3px 0 0 3px;box-shadow:inset -28px 0 30px -18px rgba(60,45,25,.45)}
-.page.right{border-radius:0 3px 3px 0;box-shadow:inset 28px 0 30px -18px rgba(60,45,25,.45)}
+.page{position:relative;flex:1;height:100%;overflow:hidden;background:linear-gradient(var(--paper),#f3f3ef);color:var(--ink);font-family:var(--display);box-sizing:border-box}
+.page.left{border-radius:4px 0 0 4px;box-shadow:inset -22px 0 24px -18px rgba(0,0,0,.18)}
+.page.right{border-radius:0 4px 4px 0;box-shadow:inset 22px 0 24px -18px rgba(0,0,0,.18)}
 .book.single .page.left{display:none}
-.book.single .page.right{border-radius:3px;box-shadow:inset 0 0 30px rgba(60,45,25,.2)}
+.book.single .page.right{border-radius:4px;box-shadow:inset 0 0 20px rgba(0,0,0,.08)}
 .pc{position:absolute;inset:0;padding:8.5% 10% 9%;display:flex;flex-direction:column;box-sizing:border-box}
-.running{font-family:var(--ui);font-size:calc(var(--fs) * .66);letter-spacing:.12em;color:#8a7a62;text-align:center;margin-bottom:1.1em;flex:none}
+.running{font-family:var(--ui);font-size:calc(var(--fs) * .66);letter-spacing:.12em;color:#8b8f97;text-align:left;margin-bottom:1.1em;flex:none;border-bottom:1px solid #e3e3df;padding-bottom:.5em}
 .body{flex:1;font-size:var(--fs);line-height:1.78;overflow:auto;scrollbar-width:none;word-break:keep-all}
 .body::-webkit-scrollbar{display:none}
 .body p{margin:0 0 .75em;text-indent:1em}
-.body h3{font-size:calc(var(--fs) * 1.08);font-weight:800;margin:.1em 0 .7em;letter-spacing:.02em;text-indent:0}
+.body h3{font-family:var(--ui);font-size:calc(var(--fs) * 1.08);font-weight:900;margin:.1em 0 .7em;letter-spacing:.02em;text-indent:0}
 .body.verse p{text-indent:0;white-space:pre-line;margin-bottom:1em}
-.body .note{font-family:var(--ui);font-size:calc(var(--fs) * .86);color:#7a4a22;border-left:2px solid #c4975a;padding-left:.7em;display:inline-block;text-indent:0}
-.folio{flex:none;text-align:center;font-family:var(--ui);font-size:calc(var(--fs) * .7);color:#8a7a62;margin-top:.6em}
-.titlepage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12%;box-sizing:border-box}
-.tp-genre{font-family:var(--ui);font-size:calc(var(--fs) * .72);letter-spacing:.3em;color:#8a6a3e;font-weight:700}
-.titlepage h1{font-size:calc(var(--fs) * 2.1);font-weight:800;margin:.7em 0 .5em;line-height:1.35;text-wrap:balance;word-break:keep-all}
-.tp-rule{width:30%;height:2px;background:var(--cover,#a98858)}
-.tp-author{margin-top:1.4em;font-size:calc(var(--fs) * 1.05)}
-.tp-press{position:absolute;bottom:9%;font-family:var(--ui);font-size:calc(var(--fs) * .68);letter-spacing:.25em;color:#8a7a62}
-.endpage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14%;box-sizing:border-box;font-size:var(--fs);color:#5a4a36}
+.body .note{font-family:var(--ui);font-size:calc(var(--fs) * .86);color:#4a4f58;border-left:3px solid #ff5a36;padding-left:.7em;display:inline-block;text-indent:0}
+.folio{flex:none;text-align:center;font-family:var(--ui);font-size:calc(var(--fs) * .7);color:#8b8f97;margin-top:.6em}
+.titlepage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:12%;box-sizing:border-box}
+.tp-genre{font-family:var(--ui);font-size:calc(var(--fs) * .72);letter-spacing:.2em;color:#ff5a36;font-weight:800}
+.titlepage h1{font-family:var(--ui);font-size:calc(var(--fs) * 2.2);font-weight:900;letter-spacing:-.02em;margin:.7em 0 .5em;line-height:1.35;text-wrap:balance;word-break:keep-all}
+.tp-rule{width:22%;height:5px;border-radius:3px;background:var(--cover,#2f6fed)}
+.tp-author{margin-top:1.4em;font-family:var(--ui);font-weight:500;font-size:calc(var(--fs) * 1.0)}
+.tp-press{position:absolute;bottom:9%;font-family:var(--ui);font-size:calc(var(--fs) * .68);letter-spacing:.25em;color:#8b8f97;font-weight:800}
+.endpage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14%;box-sizing:border-box;font-size:var(--fs);color:#4a4f58}
 .endpage .fin{font-family:var(--ui);font-weight:900;font-size:calc(var(--fs) * 1.1);letter-spacing:.5em;margin-bottom:1.4em}
 .endpage p{line-height:1.8;font-size:calc(var(--fs) * .9);word-break:keep-all}
-.endpaper{position:absolute;inset:0;background:repeating-linear-gradient(45deg,var(--c) 0 14px,color-mix(in srgb,var(--c) 82%,#fff) 14px 16px),var(--c)}
+.endpaper{position:absolute;inset:0;background:radial-gradient(circle at 85% 18%,color-mix(in srgb,var(--c) 70%,#fff) 0 22%,transparent 22.5%),linear-gradient(transparent 78%,color-mix(in srgb,var(--c) 80%,#000) 78%),var(--c)}
 .leaf{position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;z-index:3;transition:transform .75s cubic-bezier(.45,.05,.3,1)}
 .leaf .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
 .leaf .face.back{transform:rotateY(180deg)}
@@ -481,14 +481,17 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
 
   // decor spines: light base so the instance colour shows; three modern paperback styles
   const spineVariants = [0,1,2].map(v=>ctex(64,256,(g,w,h)=>{
-    g.fillStyle='#e6e6e6'; g.fillRect(0,0,w,h);
-    const sh=g.createLinearGradient(0,0,w,0); sh.addColorStop(0,'rgba(0,0,0,.22)'); sh.addColorStop(.3,'rgba(255,255,255,.1)'); sh.addColorStop(1,'rgba(0,0,0,.25)'); g.fillStyle=sh; g.fillRect(0,0,w,h);
-    if(v===0){ g.fillStyle='rgba(255,255,255,.95)'; g.fillRect(0,0,w,46); g.fillStyle='rgba(0,0,0,.55)'; g.fillRect(20,90,w-40,110); g.fillStyle='rgba(255,255,255,.8)'; g.beginPath(); g.arc(w/2,232,7,0,Math.PI*2); g.fill(); }
-    if(v===1){ g.fillStyle='rgba(0,0,0,.5)'; for(let y=40;y<190;y+=14) g.fillRect(22,y,w-44,6); g.fillStyle='rgba(255,255,255,.9)'; g.fillRect(0,214,w,42); }
-    if(v===2){ g.fillStyle='rgba(255,255,255,.85)'; g.fillRect(10,30,w-20,160); g.fillStyle='rgba(0,0,0,.6)'; for(let y=50;y<170;y+=18) g.fillRect(24,y,w-48,7); }
-    // call-number sticker near the foot of the spine; alpha marks it so the instance colour does not tint it
-    g.fillStyle='#f7f7f4'; g.fillRect(6,204,w-12,36); g.fillStyle='#222'; g.font='700 18px sans-serif'; g.textAlign='center'; g.fillText(String(v+4),w/2,229); g.fillRect(14,208,w-28,2);
-    const id=g.getImageData(6,204,w-12,36); for(let i=3;i<id.data.length;i+=4) id.data[i]=110; g.putImageData(id,6,204);
+    // flat modern paperbacks: the instance colour tints the light base; blocks marked with low alpha keep their own colour
+    g.fillStyle='#efefef'; g.fillRect(0,0,w,h);
+    const sh=g.createLinearGradient(0,0,w,0); sh.addColorStop(0,'rgba(0,0,0,.1)'); sh.addColorStop(.2,'rgba(255,255,255,.05)'); sh.addColorStop(.85,'rgba(0,0,0,0)'); sh.addColorStop(1,'rgba(0,0,0,.12)'); g.fillStyle=sh; g.fillRect(0,0,w,h);
+    const keep=[];   // [x,y,w,h] regions drawn in fixed colours
+    const block=(c,x,y,ww,hh)=>{ g.fillStyle=c; g.fillRect(x,y,ww,hh); keep.push([x,y,ww,hh]); };
+    if(v===0){ block('#fbfbf8',w/2-6,26,12,118); block('#fbfbf8',w/2-4,154,8,22); g.fillStyle='rgba(0,0,0,.35)'; g.beginPath(); g.arc(w/2,13,5,0,7); g.fill(); }
+    if(v===1){ block('#1b1c1f',0,0,w,74); block('#fbfbf8',w/2-5,12,10,48); g.fillStyle='rgba(0,0,0,.45)'; g.fillRect(w/2-4,96,8,74); g.fillStyle='rgba(255,255,255,.7)'; g.fillRect(w/2-4,180,8,10); }
+    if(v===2){ block('#f6f3ec',0,104,w,86); block('#1d1e22',w/2-5,114,10,60); block('#ff5a36',w/2-5,180,10,4); g.fillStyle='rgba(255,255,255,.8)'; g.fillRect(w/2-6,20,12,12); }
+    // call-number sticker near the foot of the spine
+    block('#f7f7f4',6,204,w-12,36); g.fillStyle='#222'; g.font='700 18px sans-serif'; g.textAlign='center'; g.fillText(String(v+4),w/2,229); g.fillRect(14,208,w-28,2);
+    for(const [x,y,ww,hh] of keep){ const id=g.getImageData(x,y,ww,hh); for(let i=3;i<id.data.length;i+=4) id.data[i]=110; g.putImageData(id,x,y); }
   }));
 
   /* ---------- materials ---------- */
@@ -871,7 +874,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(const [mz,mw] of [[RL-1.0,3.4]]) box(mw,.012,1.4,fabric('#4a4640'),0,.006,mz);
   }
   /* ---------- book filling ---------- */
-  const PALETTE = ['#f2efe8','#1d1d1f','#d8452f','#e9b23a','#2e5e8c','#1f7a6a','#8fb39a','#c9c2b4','#e48a6a','#3a3f8f','#6b2e3a','#f0d9b0','#4f6f52','#b03a48','#7a8ea6','#2c2c34','#ddd2be','#9a6a3a','#ef8f3a','#5c4a7a'];
+  const PALETTE = ['#f4f1ea','#16171b','#ff5a36','#ffc531','#2f6fed','#17a382','#9ad1c7','#d9d4cc','#ff8fa3','#3b3fb6','#8e2b4f','#f6e3c5','#4f8a63','#e23d5c','#7aa3d6','#24262c','#e9e4da','#c4733b','#ff9a3c','#7b5cc4','#00a6c8','#b5d334'];
   const decor = [[],[],[]];
   let curGenre = 0;          // genre stamped on every shelf book as it is placed
   const occluders = [];      // case back panels: stop picks passing through a case
@@ -983,17 +986,20 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const CASE_LEN=6.4, CASE_H=2.15, CASE_D=.62, AISLE=3.2, END_H=CASE_H+.22;
   const readable = [];
   const zones = [];
+  const inkOn=c=>{ const k=new THREE.Color(c); return (k.r*.3+k.g*.59+k.b*.11)>.62 ? '#17181c' : '#ffffff'; };
   function spineTexFor(b){
     return ctex(128,640,(g,w,h)=>{
+      const ink=inkOn(b.color);
       g.fillStyle=b.color; g.fillRect(0,0,w,h);
-      const sh=g.createLinearGradient(0,0,w,0); sh.addColorStop(0,'rgba(0,0,0,.3)'); sh.addColorStop(.3,'rgba(255,255,255,.12)'); sh.addColorStop(1,'rgba(0,0,0,.35)'); g.fillStyle=sh; g.fillRect(0,0,w,h);
-      g.save(); g.translate(w/2,h/2-30); g.rotate(Math.PI/2);
-      let fs=50; g.font=`800 ${fs}px "Nanum Myeongjo", serif`;
-      while(g.measureText(b.title).width>h-190 && fs>18){ fs-=2; g.font=`800 ${fs}px "Nanum Myeongjo", serif`; }
-      g.fillStyle='#fffaf0'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(b.title,0,0); g.restore();
-      g.fillStyle='rgba(255,250,240,.85)'; g.fillRect(w/2-18,h-120,36,3);
-      g.save(); g.translate(w/2,h-80); g.font='700 20px "Noto Sans KR", sans-serif'; g.fillStyle='#fffaf0'; g.textAlign='center'; g.fillText(b.author.split(' ')[0].slice(0,4),0,0); g.restore();
-      g.fillStyle='rgba(255,250,240,.9)'; g.font='900 16px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText('관평',w/2,h-30);
+      const sh=g.createLinearGradient(0,0,w,0); sh.addColorStop(0,'rgba(0,0,0,.12)'); sh.addColorStop(.2,'rgba(255,255,255,.06)'); sh.addColorStop(1,'rgba(0,0,0,.14)'); g.fillStyle=sh; g.fillRect(0,0,w,h);
+      g.fillStyle=ink==='#ffffff'?'rgba(255,255,255,.9)':'#ff5a36'; g.beginPath(); g.arc(w/2,44,14,0,Math.PI*2); g.fill();
+      g.save(); g.translate(w/2,h/2-20); g.rotate(Math.PI/2);
+      let fs=48; g.font=`800 ${fs}px "Noto Sans KR", sans-serif`;
+      while(g.measureText(b.title).width>h-210 && fs>18){ fs-=2; g.font=`800 ${fs}px "Noto Sans KR", sans-serif`; }
+      g.fillStyle=ink; g.textAlign='center'; g.textBaseline='middle'; g.fillText(b.title,0,0); g.restore();
+      g.fillStyle=ink; g.globalAlpha=.8; g.fillRect(w/2-14,h-128,28,3);
+      g.save(); g.translate(w/2,h-88); g.font='500 19px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText(b.author.split(' ')[0].slice(0,4),0,0); g.restore();
+      g.globalAlpha=1; g.fillStyle=ink; g.font='900 15px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText('GWANPYEONG',w/2,h-30);
     });
   }
   function endPanelTex(G){
@@ -2760,7 +2766,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   for(const [x,z] of [[0.15,-1.9],[3.95,-9.9],[-5.55,6.1]]){ const s=new THREE.Mesh(new THREE.CylinderGeometry(.2,.27,.42,24),solid('#6f6c66')); s.position.set(x,FL+.21,z); scene.add(s); const t=new THREE.Mesh(new THREE.CylinderGeometry(.205,.205,.02,24),solid('#3a3935')); t.position.set(x,FL+.43,z); scene.add(t); collideBox(x-.24,x+.24,FL,FL+.42,z-.24,z+.24); }
 
   /* --- new-books corner: a blue bench along the right wall under a hanging 신착도서 sign --- */
-  { const g=new THREE.Group(); g.position.set(RW-.45,FL,13.6); g.rotation.y=-Math.PI/2; scene.add(g);
+  { const g=new THREE.Group(); g.position.set(RW-.45,FL,13.6); g.rotation.y=Math.PI/2; scene.add(g);
     box(4.6,.38,.55,M.oak,0,.19,0,g); box(4.6,.09,.56,brightBlue,0,.425,0,g); box(4.6,.42,.08,brightBlue,0,.72,.26,g);
     collide(g);
     const list=[-1.6,-.55,.55,1.6].map(x=>addSeat(g,x,-.05,1.12,'파란 벤치',-.75,false)); bindMany(g,list);
@@ -2839,8 +2845,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     sign(1.4,1.9,560,760,(c,w,h)=>{ c.fillStyle='#f7f5f0'; c.fillRect(0,0,w,h); c.fillStyle='#2b6cb0'; c.fillRect(0,0,w,120); c.fillStyle='#fff'; c.font='900 56px "Noto Sans KR", sans-serif'; c.fillText('층별 안내',36,82);
       [['3F','디지털자료실 · 강의실'],['2F','종합자료실 · 열람 테이블'],['1F','어린이자료실 · 사무실 · 수유실']].forEach(([f,t],i)=>{ const y=200+i*180; c.fillStyle=f==='2F'?'#f2c230':'#dfe6ef'; c.fillRect(30,y-60,w-60,140); c.fillStyle='#1d2b3a'; c.font='900 64px sans-serif'; c.fillText(f,54,y+30); c.font='700 30px "Noto Sans KR", sans-serif'; c.fillText(t,170,y+22); });
       c.fillStyle='#8a929c'; c.font='400 24px "Noto Sans KR", sans-serif'; c.fillText('지금 계신 곳: 2층',36,h-40); },scene,-RW+.02,FL+1.5,21.0,Math.PI/2,.05);
-    const g=new THREE.Group(); g.position.set(-4.5,FL,RL-.45); g.rotation.y=Math.PI; scene.add(g);
-    box(2.4,.4,.5,M.oak,0,.2,0,g); box(2.4,.08,.52,brightBlue,0,.44,0,g); collide(g);
+    const g=new THREE.Group(); g.position.set(-4.5,FL,RL-.45); scene.add(g);
+    box(2.4,.4,.5,M.oak,0,.2,0,g); box(2.4,.08,.52,brightBlue,0,.44,0,g); box(2.4,.4,.06,brightBlue,0,.68,.22,g); collide(g);
     const list=[-.7,.7].map(x=>addSeat(g,x,0,1.12,'복도 벤치',-.7,false)); bindMany(g,list);
     for(const [x,label] of [[-9.6,'화장실'],[9.6,'세미나실']]){
       const d=new THREE.Group(); d.position.set(x,FL,RL-.02); d.rotation.y=Math.PI; scene.add(d);
@@ -3083,16 +3089,20 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   camera.add(hand); scene.add(camera);
   function coverTex(b){
     return ctex(320,448,(g,w,h)=>{
+      const ink=inkOn(b.color), soft=ink==='#ffffff'?'rgba(255,255,255,.2)':'rgba(0,0,0,.12)';
       g.fillStyle=b.color; g.fillRect(0,0,w,h);
-      g.fillStyle='rgba(0,0,0,.18)'; g.fillRect(0,0,18,h);
-      g.fillStyle='rgba(255,250,240,.85)'; g.font='700 15px "Noto Sans KR", sans-serif'; g.fillText(`${b.genre}`,40,52);
-      g.fillRect(40,66,30,2);
-      g.fillStyle='#fffaf0'; g.font='800 34px "Nanum Myeongjo", serif';
-      const words=b.title.split(' '); let line='', y=130;
-      for(const wd of words){ const t=line?line+' '+wd:wd; if(g.measureText(t).width>w-80 && line){ g.fillText(line,40,y); y+=46; line=wd; } else line=t; }
-      g.fillText(line,40,y);
-      g.font='400 17px "Noto Sans KR", sans-serif'; g.fillStyle='rgba(255,250,240,.85)'; g.fillText(b.author+' 지음',40,h-70);
-      g.font='700 13px "Noto Sans KR", sans-serif'; g.fillText('관평도서관 문고',40,h-40);
+      // geometric accent: a big circle off the top-right corner and a block along the foot
+      g.fillStyle=soft; g.beginPath(); g.arc(w-30,90,120,0,Math.PI*2); g.fill();
+      g.fillStyle=ink==='#ffffff'?'rgba(0,0,0,.22)':'rgba(255,255,255,.45)'; g.fillRect(0,h-110,w,110);
+      g.fillStyle='#ff5a36'; g.fillRect(28,h-110,56,6);
+      g.fillStyle=ink; g.font='700 13px "Noto Sans KR", sans-serif'; g.globalAlpha=.85;
+      roundRect(g,28,30,g.measureText(b.genre).width+24,28,14); g.strokeStyle=ink; g.lineWidth=1.5; g.stroke(); g.fillText(b.genre,40,49); g.globalAlpha=1;
+      g.font='800 36px "Noto Sans KR", sans-serif';
+      const words=b.title.split(' '); let line='', y=150;
+      for(const wd of words){ const t=line?line+' '+wd:wd; if(g.measureText(t).width>w-60 && line){ g.fillText(line,28,y); y+=46; line=wd; } else line=t; }
+      g.fillText(line,28,y);
+      g.font='500 17px "Noto Sans KR", sans-serif'; g.fillText(b.author,28,h-64);
+      g.font='900 12px "Noto Sans KR", sans-serif'; g.globalAlpha=.7; g.fillText('GWANPYEONG BOOKS',28,h-34); g.globalAlpha=1;
     });
   }
   function batchim(w){ const c=w.charCodeAt(w.length-1); return c>=0xAC00 && c<=0xD7A3 && (c-0xAC00)%28!==0; }
@@ -3138,11 +3148,16 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
 
   /* ---------- search kiosk ---------- */
   const spList=$('spList'), spStatus=$('spStatus'), spQ=$('spQ'), spChips=$('spChips'), toastEl=$('toast');
-  let index=null, indexing=false, filter='전체', shown=[];
+  let index=null, indexing=false, filter='전체', shown=[], searchFloor=0;
   function toast(msg){ toastEl.textContent=msg; toastEl.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>toastEl.hidden=true,4500); }
   const rowH0=(CASE_H-.08)/6;
   function locDecor(v,i){
     const C=decorSets[v].centers, x=C[i*3], y=C[i*3+1], z=C[i*3+2];
+    if(y>FL-1){ const yy=y-FL;
+      if(Math.abs(x)>12.2) return `2층 오른쪽 벽 서가 · ${Math.min(WALL_ROWS,Math.floor((yy-.08)/((WALL_H-.18)/WALL_ROWS))+1)}단`;
+      if(z<-RL+.6) return `2층 뒤쪽 벽 서가 · ${Math.min(WALL_ROWS,Math.floor((yy-.08)/((WALL_H-.18)/WALL_ROWS))+1)}단`;
+      if(Math.hypot(x+8.4,z-15.3)<.8) return '2층 청소년 전집 회전 서가';
+      return `2층 ${orderedGenres[decorSets[v].gen[i]].genre} 서가 · ${Math.floor((yy-.08)/rowH0)+1}단`; }
     if(Math.abs(x)>12.2) return `${x<0?'왼쪽':'오른쪽'} 벽 서가 · ${Math.min(WALL_ROWS,Math.floor((y-.08)/((WALL_H-.08)/WALL_ROWS))+1)}단${y>2.1?' · 사다리 필요':''}`;
     if(z>LOBBY_Z-.6) return '자료실 입구 쪽 벽 서가';
     if(z<-RL+.5) return '창가 낮은 서가';
@@ -3152,7 +3167,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   function buildIndex(done){
     indexing=true; index=[];
     const seen=new Set();
-    for(const m of readable){ const b=m.userData.book; if(seen.has(b)) continue; seen.add(b); index.push({kind:'f',mesh:m,book:b,title:b.title,author:b.author,genre:b.genre,color:b.color,loc:m.userData.loc,tag:b.long?'장편':'사서 추천'}); }
+    for(const m of readable){ const b=m.userData.book; if(seen.has(b)) continue; seen.add(b); const wp=m.getWorldPosition(new THREE.Vector3()); index.push({kind:'f',fl:wp.y>FL-1?1:0,mesh:m,book:b,title:b.title,author:b.author,genre:b.genre,color:b.color,loc:m.userData.loc,tag:b.long?'장편':'사서 추천'}); }
     const jobs=[]; decorSets.forEach((S,v)=>jobs.push([v,0]));
     const total=decorSets.reduce((n,S)=>n+S.gen.length,0); let doneN=0;
     (function step(){
@@ -3160,7 +3175,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       while(jobs.length && performance.now()-t0<24){
         const j=jobs[0], S=decorSets[j[0]];
         const end=Math.min(S.gen.length,j[1]+400);
-        for(let i=j[1];i<end;i++){ const G=orderedGenres[S.gen[i]], key=j[0]*1e6+i, b=BOOKGEN.make(G.genre,key+7); index.push({kind:'d',v:j[0],i,title:b.title,author:b.author,genre:G.genre,color:'#'+S.colors[i].clone().convertLinearToSRGB().getHexString()}); }
+        for(let i=j[1];i<end;i++){ const G=orderedGenres[S.gen[i]], key=j[0]*1e6+i, b=BOOKGEN.make(G.genre,key+7); index.push({kind:'d',v:j[0],i,fl:S.centers[i*3+1]>FL-1?1:0,title:b.title,author:b.author,genre:G.genre,color:'#'+S.colors[i].clone().convertLinearToSRGB().getHexString()}); }
         doneN+=end-j[1]; j[1]=end; if(end>=S.gen.length) jobs.shift();
       }
       spStatus.textContent=`목록을 만드는 중… ${Math.round(doneN/total*100)}%`;
@@ -3173,6 +3188,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const q=spQ.value.trim().toLowerCase(), words=q.split(/\s+/).filter(Boolean);
     const out=[]; let count=0;
     for(const e of index){
+      if(e.fl!==searchFloor) continue;
       if(filter==='사서가 쓴 책' ? e.kind!=='f' : filter==='장편' ? e.tag!=='장편' : filter!=='전체' && e.genre!==filter) continue;
       if(words.length){ const hay=(e.title+' '+e.author+' '+e.genre).toLowerCase(); if(!words.every(w=>hay.includes(w))) continue; }
       count++; if(out.length<80) out.push(e);
@@ -3189,11 +3205,15 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(b.dataset.a==='read'){ closeSearch(false); openBook(en.kind==='f'?en.book:bookFor({type:'d',v:en.v,i:en.i})); }
     else goTo(en);
   });
+  const floorHead=()=>{ const n=index&&!indexing ? index.reduce((k,e)=>k+(e.fl===searchFloor),0).toLocaleString('ko-KR')+'권' : '';
+    $('spCount').textContent = searchFloor ? `2층 종합자료실 자료 ${n} · 1층 자료는 1층 컴퓨터에서 찾아요` : `1층 어린이자료실 자료 ${n} · 2층 자료는 2층 컴퓨터에서 찾아요`; };
   function openSearch(){
     openPanel('search');
-    $('spCount').textContent=`관평도서관 소장 자료 ${(BOOKS.length+LONG_BOOKS.length+decorSets.reduce((n,S)=>n+S.gen.length,0)).toLocaleString('ko-KR')}권`;
+    searchFloor = player.y>FL-1.2 ? 1 : 0;
+    floorHead();
+    spChips.querySelectorAll('button').forEach(b=>{ const only1=b.dataset.c==='사서가 쓴 책'||b.dataset.c==='장편'; b.hidden = only1 && searchFloor===1; if(b.hidden && b.classList.contains('on')){ filter='전체'; spChips.querySelector('button').classList.add('on'); b.classList.remove('on'); } });
     setTimeout(()=>spQ.focus({preventScroll:true}),30);
-    if(!index) buildIndex(runSearch); else runSearch();
+    if(!index) buildIndex(()=>{ floorHead(); runSearch(); }); else runSearch();
   }
   $('spClose').onclick=()=>closeSearch(true);
   $('search').addEventListener('mousedown',e=>{ if(e.target===$('search')) closeSearch(true); });
@@ -3323,7 +3343,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     }
     if(player.seat){
       if(f||sx||jumpQueued){ const st=player.seat; player.seat=null; jumpQueued=false;
-        player.x=st.standX; player.z=st.standZ; if(blocked(player.x,player.z,st.y||0)){ player.x=st.x+(st.standX-st.x)*1.6; player.z=st.z+(st.standZ-st.z)*1.6; } }
+        const sy=st.y||0, ok=(x,z)=>!blocked(x,z,sy) && groundAt(x,z,sy+.3)>sy-.3;
+        let placed=false;
+        for(const k of [1,1.6,-1,-1.6]){ const x=st.x+(st.standX-st.x)*k, z=st.z+(st.standZ-st.z)*k; if(ok(x,z)){ player.x=x; player.z=z; placed=true; break; } }
+        if(!placed){ player.x=st.x; player.z=st.z; }
+        player.y=sy; player.vy=0; }
       else { player.x=player.seat.x; player.z=player.seat.z; player.y=player.seat.y||0; player.vx=player.vz=player.vy=0; return; }
     }
     if(player.ladder){
