@@ -782,6 +782,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   let ceil;
   { const sh=new THREE.Shape([new THREE.Vector2(-RW,-RL),new THREE.Vector2(RW,-RL),new THREE.Vector2(RW,RL),new THREE.Vector2(-RW,RL)]);
     for(const c of CLOUDS) sh.holes.push(new THREE.Path(c));
+    sh.holes.push(new THREE.Path([new THREE.Vector2(3.6,21.9),new THREE.Vector2(3.6,23.98),new THREE.Vector2(5.95,23.98),new THREE.Vector2(5.95,21.9)]));   // elevator shaft
     const geo=new THREE.ShapeGeometry(sh); geo.rotateX(Math.PI/2);
     ceil=new THREE.Mesh(geo,X.ceiling); ceil.position.y=RH; scene.add(ceil);
     for(const c of CLOUDS){
@@ -2662,7 +2663,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const fl2=[[-RW,RW,-RL,SHAFT.z0],[-RW,SHAFT.x0,SHAFT.z0,RL],[SHAFT.x1,RW,SHAFT.z0,RL]];
   for(const [a,b,c,d] of fl2){ slab(a,b,FL-.3,FL,c,d,[X.white,X.white,floor2,X.ceiling,X.white,X.white],1.2); collideBox(a,b,FL-.3,FL,c,d); }
   const bandAt=(x0,x1,z0,z1)=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,z1-z0),band2); m.rotation.x=-Math.PI/2; m.position.set((x0+x1)/2,FL+.002,(z0+z1)/2); scene.add(m); };
-  bandAt(-12.2,12.2,14.6,16.0); bandAt(-12.2,12.2,-1.6,-0.4); bandAt(-1.0,1.0,16.0,18.0); bandAt(-11.3,-10.3,-14,14.6); bandAt(-3,3,18.3,19.3);
+  bandAt(-12.2,12.2,14.6,16.0); bandAt(-8.8,11.6,-2.45,-1.35); bandAt(-8.8,11.6,5.55,6.65); bandAt(-8.8,11.6,-10.45,-9.35); bandAt(-1.0,1.0,16.0,18.0); bandAt(-11.3,-10.3,-14,14.6); bandAt(-3,3,18.3,19.3);
   // ceiling, downlights, and the pale-blue bulkhead that runs above the window aisle
   slab(-RW,RW,C2,C2+.12,-RL,RL,X.ceiling);
   slab(-10.1,-8.7,C2-.5,C2,-23.4,17.95,softBlue);
@@ -2681,7 +2682,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(let z=z0+.05;z<z1;z+=2.8) slab(x0+.02,x1-.06,FL,top-.05,z,z+.04,X.white);
     const stoolSeat=solid('#9a4e2c'), chrome=X.steel, wood=M.oak, monitorM=solid('#17191c');
     let n=0;
-    for(let z=z0+.8;z<z1-.4;z+=1.35,n++){
+    const PCZ=[-10.5,-6.0,-1.5,3.0,7.5,12.0];
+    for(const z of PCZ){ n++;
       const pc=new THREE.Group(); pc.position.set(x0+.32,top,z); pc.rotation.y=Math.PI/2; scene.add(pc);
       box(.2,.012,.16,monitorM,0,.006,0,pc); box(.04,.22,.03,monitorM,0,.12,.03,pc);
       const mon=box(.56,.34,.035,monitorM,0,.38,.0,pc);
@@ -2699,7 +2701,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       collideBox(-RW+1.05,-RW+1.45,FL,FL+.7,z-.2,z+.2);
       addSeat(st,0,0,1.42,'창가 PC석 의자',.75);
     }
-    for(let z=z0+1.4;z<z1;z+=2.7) pendant(-RW+.45,z,FL+2.25,(Math.round(z)%2)?'#e9ecef':'#2b2f36',C2);
+    PCZ.forEach((z,i)=>{ pendant(-RW+.45,z-.9,FL+2.25,i%2?'#e9ecef':'#2b2f36',C2); pendant(-RW+.45,z+.9,FL+2.25,i%2?'#2b2f36':'#e9ecef',C2); });
     zones.push({x0:-RW,x1:-8.6,z0:z0,z1:z1,label:'창가 PC석',fl:1});
     // air purifier at the end of the aisle
     const ap=new THREE.Group(); ap.position.set(-RW+.5,FL,-14.8); scene.add(ap);
@@ -2714,10 +2716,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const rows=kdcOf(G), rh=(h-40)/rows.length; g.textBaseline='middle';
     rows.forEach(([n,t],i)=>{ const y=20+i*rh; g.fillStyle='#e3e4e8'; g.fillRect(132,y+4,w-160,rh-8); g.fillStyle='#5b5f66'; g.font='700 22px "Noto Sans KR", sans-serif'; g.fillText(n,144,y+rh/2); g.fillText(t,230,y+rh/2); });
     g.fillStyle='#fff'; g.font='900 26px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText(G.genre.slice(0,3),62,h/2+2); g.textAlign='left'; };
-  const COLS2=[-7.0,-4.4,-1.8,0.8,3.4,6.0,8.6], BLOCKS2=[[5.5,7],[-5.0,7],[-15.0,4]];
+  const COLS2=[-8.4,-6.5,-4.6,-2.7,-0.8,1.1,3.0,4.9,6.8,8.7,10.6], BLOCKS2=[[10.1,11],[2.1,11],[-5.9,11],[-13.9,11]];
   let g2=0;
   for(const [zc,ncol] of BLOCKS2) for(let k=0;k<ncol;k++){
-    const x=COLS2[k + (ncol<7?2:0)], G=orderedGenres[curGenre=(g2++*5+2)%orderedGenres.length];
+    const x=COLS2[k], G=orderedGenres[curGenre=(g2++*5+2)%orderedGenres.length];
     const g=bookcase({len:CASE_LEN, hgt:CASE_H, dep:CASE_D, rows:6, bays:7, double:true});
     g.position.set(x,FL,zc); g.rotation.y=Math.PI/2; scene.add(g); stockCase(g); collide(g);
     for(const e of [1,-1]){
@@ -2726,7 +2728,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       collideBox(x-CASE_D/2-.05,x+CASE_D/2+.05,FL,FL+CASE_H+.22,ze-.04,ze+.04);
       sign(.62,.36,420,244,purpleSign(G),scene,x,FL+1.62,ze+e*.045,e>0?0:Math.PI,.08,false,true);
     }
-    zones.push({x0:x-1.3,x1:x+1.3,z0:zc-CASE_LEN/2-.6,z1:zc+CASE_LEN/2+.6,label:`${G.genre} 서가 · 2층 종합자료실`,fl:1});
+    zones.push({x0:x-.95,x1:x+.95,z0:zc-CASE_LEN/2-.6,z1:zc+CASE_LEN/2+.6,label:`${G.genre} 서가 · 2층 종합자료실`,fl:1});
   }
   // wall shelves on the right and back walls
   function wallSeg2(x,z,ry,len){
@@ -2740,7 +2742,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   { const sg=new THREE.Group(); sg.position.set(-11.5,FL,-RL+WALL_DEP/2); scene.add(sg); }
 
   /* --- octagonal turning tower of teen series (photo: 청소년 전집) --- */
-  { const g=new THREE.Group(); g.position.set(-8.0,FL,11.4); scene.add(g);
+  { const g=new THREE.Group(); g.position.set(-8.4,FL,15.3); scene.add(g);
     const r=.36, side=2*r*Math.tan(Math.PI/8);
     { const core=new THREE.Mesh(new THREE.CylinderGeometry(r*.96,r*.96,1.86,8),M.oak); core.position.y=.96; g.add(core); }
     const base=new THREE.Mesh(new THREE.CylinderGeometry(r+.12,r+.14,.06,8),M.oak); base.position.y=.03; g.add(base);
@@ -2751,11 +2753,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(let i=0;i<8;i++){ const f=new THREE.Group(); f.rotation.y=i*Math.PI/4; f.position.set(Math.sin(i*Math.PI/4)*r*.96,0,Math.cos(i*Math.PI/4)*r*.96); g.add(f); f.updateMatrixWorld(true);
       for(let row=0;row<5;row++) fillRow(f,-side/2+.01,side/2-.01,.1+row*.36,.0,1,.32,.12,null); }
     const tag=sign(.42,.18,240,100,(c,w,h)=>{ c.fillStyle='#4aa0e0'; roundRect(c,0,0,w,h,14); c.fill(); c.fillStyle='#fff'; c.font='700 26px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('청소년',w/2,38); c.font='900 34px "Noto Sans KR", sans-serif'; c.fillText('전집',w/2,80); },g,0,2.0,.0,0,.1,true);
-    collideBox(-8.0-.5,-8.0+.5,FL,FL+1.9,11.4-.5,11.4+.5);
-    zones.push({x0:-9.2,x1:-6.8,z0:10.2,z1:12.6,label:'청소년 전집 회전 서가',fl:1});
+    collideBox(-8.4-.5,-8.4+.5,FL,FL+1.9,15.3-.5,15.3+.5);
+    zones.push({x0:-9.6,x1:-7.2,z0:14.1,z1:16.5,label:'청소년 전집 회전 서가',fl:1});
   }
   // grey kick step stool, like the one in the photo between the cases
-  for(const [x,z] of [[-0.5,1.6],[4.7,-8.9]]){ const s=new THREE.Mesh(new THREE.CylinderGeometry(.2,.27,.42,24),solid('#6f6c66')); s.position.set(x,FL+.21,z); scene.add(s); const t=new THREE.Mesh(new THREE.CylinderGeometry(.205,.205,.02,24),solid('#3a3935')); t.position.set(x,FL+.43,z); scene.add(t); collideBox(x-.24,x+.24,FL,FL+.42,z-.24,z+.24); }
+  for(const [x,z] of [[0.15,-1.9],[3.95,-9.9],[-5.55,6.1]]){ const s=new THREE.Mesh(new THREE.CylinderGeometry(.2,.27,.42,24),solid('#6f6c66')); s.position.set(x,FL+.21,z); scene.add(s); const t=new THREE.Mesh(new THREE.CylinderGeometry(.205,.205,.02,24),solid('#3a3935')); t.position.set(x,FL+.43,z); scene.add(t); collideBox(x-.24,x+.24,FL,FL+.42,z-.24,z+.24); }
 
   /* --- new-books corner: a blue bench along the right wall under a hanging 신착도서 sign --- */
   { const g=new THREE.Group(); g.position.set(RW-.45,FL,13.6); g.rotation.y=-Math.PI/2; scene.add(g);
@@ -2778,7 +2780,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   for(const x of [-5.6,0,5.6]){
     const z=-20.8; slab(x-1.3,x+1.3,FL+.72,FL+.76,z-.6,z+.6,M.oak); collideBox(x-1.3,x+1.3,FL,FL+.76,z-.6,z+.6);
     for(const [sx,sz] of [[-1.2,-.5],[1.2,-.5],[-1.2,.5],[1.2,.5]]) slab(x+sx-.03,x+sx+.03,FL,FL+.72,z+sz-.03,z+sz+.03,X.steel);
-    for(const dx of [-.8,0,.8]){ chairAt(x+dx,FL,z-.95,0,solid('#3d6fa8')); chairAt(x+dx,FL,z+.95,Math.PI,solid('#3d6fa8')); }
+    for(const dx of [-.8,0,.8]){ chairAt(x+dx,FL,z-.95,Math.PI,solid('#3d6fa8')); chairAt(x+dx,FL,z+.95,0,solid('#3d6fa8')); }
     pendant(x,z,FL+2.2,'#f1f1ee',C2);
   }
   zones.push({x0:-8,x1:8,z0:-23.8,z1:-19.4,label:'열람 테이블 · 2층 종합자료실',fl:1});
@@ -2857,14 +2859,18 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const hallDoors=[{amt:0},{amt:0}], hallLeaves=[[],[]], floorSigns=[];
   const brushed=new THREE.MeshStandardMaterial({color:0xc6cacd,roughness:.32,metalness:.85});
   const indTex=f=>ctex(160,64,(c,w,h)=>{ c.fillStyle='#111'; c.fillRect(0,0,w,h); c.fillStyle='#ff6a2a'; c.font='900 46px monospace'; c.textAlign='center'; c.fillText(String(f+1),w/2,48); c.font='700 28px monospace'; if(elev.moving) c.fillText(elev.pending>elev.floor?'▲':'▼',w-26,44); });
+  // shaft: closed from the lobby floor to the 2F ceiling so the car never shows the void between floors
+  slab(SHAFT.x0,SHAFT.x0+.12,0,C2,SHAFT.z0,SHAFT.z1,[X.paint,X.paint,X.paint,X.paint,X.paint,X.paint]);
+  slab(SHAFT.x1-.05,SHAFT.x1+.05,RH,C2,SHAFT.z0,SHAFT.z1,X.white);
+  for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]) slab(a,b,0,C2,SHAFT.z0,SHAFT.z0+.1,brushed);
+  slab(SHAFT.dx0,SHAFT.dx1,2.15,FL,SHAFT.z0,SHAFT.z0+.1,brushed); slab(SHAFT.dx0,SHAFT.dx1,FL+2.15,C2,SHAFT.z0,SHAFT.z0+.1,brushed);
   for(const f of [0,1]){
-    const y0=f*FL, wm=f?X.white:X.paint;
-    slab(SHAFT.x0,SHAFT.x0+.12,y0,y0+RH,SHAFT.z0,SHAFT.z1,wm); collideBox(SHAFT.x0,SHAFT.x0+.12,y0,y0+RH,SHAFT.z0,SHAFT.z1);
-    if(f) { slab(SHAFT.x1-.05,SHAFT.x1+.05,y0,y0+RH,SHAFT.z0,SHAFT.z1,wm); collideBox(SHAFT.x1-.05,SHAFT.x1+.05,y0,y0+RH,SHAFT.z0,SHAFT.z1); }
-    for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]){ slab(a,b,y0,y0+RH,SHAFT.z0,SHAFT.z0+.1,brushed); collideBox(a,b,y0,y0+RH,SHAFT.z0,SHAFT.z0+.1); }
-    slab(SHAFT.dx0,SHAFT.dx1,y0+2.15,y0+RH,SHAFT.z0,SHAFT.z0+.1,brushed);
+    const y0=f*FL;
+    collideBox(SHAFT.x0,SHAFT.x0+.12,y0,y0+RH,SHAFT.z0,SHAFT.z1);
+    if(f) collideBox(SHAFT.x1-.05,SHAFT.x1+.05,y0,y0+RH,SHAFT.z0,SHAFT.z1);
+    for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]) collideBox(a,b,y0,y0+RH,SHAFT.z0,SHAFT.z0+.1);
     colliders.push({x0:SHAFT.dx0,x1:SHAFT.dx1,y0,y1:y0+2.15,z0:SHAFT.z0-.02,z1:SHAFT.z0+.16,door:hallDoors[f]});
-    for(const sd of [-1,1]){ const l=box(.56,2.13,.03,brushed,0,y0+1.075,SHAFT.z0+.13); l.userData.sd=sd; hallLeaves[f].push(l); }
+    for(const sd of [-1,1]){ const l=box(.56,2.32,.03,brushed,0,y0+1.06,SHAFT.z0+.13); l.userData.sd=sd; hallLeaves[f].push(l); }
     const it=indTex(0), ind=new THREE.Mesh(new THREE.PlaneGeometry(.32,.13),new THREE.MeshBasicMaterial({map:it})); ind.position.set((SHAFT.dx0+SHAFT.dx1)/2,y0+2.35,SHAFT.z0-.005); ind.rotation.y=Math.PI; scene.add(ind); floorSigns.push(ind);
     const btn=new THREE.Group(); btn.position.set(SHAFT.dx1+.2,y0+1.1,SHAFT.z0-.01); btn.rotation.y=Math.PI; scene.add(btn);
     box(.1,.22,.015,brushed,0,0,0,btn); const b1=new THREE.Mesh(new THREE.CircleGeometry(.025,20),new THREE.MeshBasicMaterial({color:0xffb347})); b1.position.set(0,.04,.009); btn.add(b1);
@@ -2873,8 +2879,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     sign(.36,.12,180,60,(c,w,h)=>{ c.fillStyle='#2b6cb0'; c.fillRect(0,0,w,h); c.fillStyle='#fff'; c.font='700 30px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('엘리베이터',w/2,42); },scene,SHAFT.x0-.005,y0+2.3,SHAFT.z0+.5,-Math.PI/2,.1);
   }
   const car=new THREE.Group(); scene.add(car);
-  { const x0=SHAFT.x0+.12, x1=SHAFT.x1-.08, z0=SHAFT.z0+.16, z1=SHAFT.z1-.04, cx=(x0+x1)/2, cz=(z0+z1)/2, w=x1-x0, d=z1-z0;
-    box(w,.08,d,solid('#3a3b3e'),cx,-.04,cz,car);
+  { const x0=SHAFT.x0+.15, x1=SHAFT.x1-.1, z0=SHAFT.z0+.17, z1=SHAFT.z1-.06, cx=(x0+x1)/2, cz=(z0+z1)/2, w=x1-x0, d=z1-z0;
+    box(w,.08,d,solid('#3a3b3e'),cx,-.028,cz,car);
     box(.03,2.4,d,brushed,x0+.015,1.2,cz,car); box(.03,2.4,d,brushed,x1-.015,1.2,cz,car); box(w,2.4,.03,brushed,cx,1.2,z1-.015,car);
     box(w,.04,d,X.white,cx,2.42,cz,car); const lp=new THREE.Mesh(new THREE.PlaneGeometry(w-.5,d-.5),M.led); lp.rotation.x=Math.PI/2; lp.position.set(cx,2.395,cz); car.add(lp);
     box(w-.1,.04,.04,X.steel,cx,.95,z1-.06,car); box(.04,.04,d-.2,X.steel,x0+.06,.95,cz,car);
@@ -2905,15 +2911,15 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       const ty=elev.pending*FL, dir=Math.sign(ty-elev.y), left=Math.abs(ty-elev.y);
       elev.v=Math.min(1.5,elev.v+dt*1.2, Math.max(.2,Math.sqrt(2*1.0*left)));
       elev.y+=dir*Math.min(left,elev.v*dt);
-      if(elev.riding){ player.y=elev.y; player.vy=0; player.ground=true; }
+      if(elev.riding){ player.y=elev.y+.012; player.vy=0; player.ground=true; }
       if(Math.abs(ty-elev.y)<.001){ elev.y=ty; elev.floor=elev.pending; elev.pending=null; elev.moving=false; elev.doorT=1; elev.openT=0; tone([1318,1046],.18,'sine',.04);
         floorSigns.forEach(s=>{ s.material.map=indTex(elev.floor); });
         if(elev.riding) toast(elev.floor? '2층입니다. 앞으로 나가면 종합자료실이에요.' : '1층입니다. 로비예요.');
         elev.riding=false; }
     }
-    car.position.y=elev.y; carFloorCol.y0=elev.y-.1; carFloorCol.y1=elev.y;
+    car.position.y=elev.y; carFloorCol.y0=elev.y-.1; carFloorCol.y1=elev.y+.012;
     hallDoors.forEach((h,f)=>{ h.amt = (!elev.moving && elev.floor===f) ? elev.door : 0;
-      hallLeaves[f].forEach(l=>l.position.x=(SHAFT.dx0+SHAFT.dx1)/2 + l.userData.sd*(.275+h.amt*.56)); });
+      hallLeaves[f].forEach(l=>l.position.x=(SHAFT.dx0+SHAFT.dx1)/2 + l.userData.sd*(.275+h.amt*(l.userData.sd>0?.46:.56))); });
     // auto doors into the 2F reading room
     const near2 = player.y>FL-1.2 && Math.abs(player.z-LOBBY_Z)<2.2 && Math.abs(player.x)<2.0 || [...remotes.values()].some(r=>r.y>FL-1.2 && Math.abs(r.z-LOBBY_Z)<2.2 && Math.abs(r.x)<2.0);
     door2.amt+=((near2?1:0)-door2.amt)*Math.min(1,dt*4);
