@@ -247,15 +247,15 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div class="id-note" id="idNote">🔑 보안 패스키는 이름 입력에서만 받을 수 있어요.</div>
   <div class="id-row"><button type="button" class="id-cancel" id="idCancel">나중에</button><button type="button" class="id-ok" id="idOk">확인</button></div>
 </div></div>
-<div id="lock" hidden><div class="lk" id="lkPanel" role="dialog" aria-label="사무실 도어록">
-  <b>사무실 도어록</b><small>관평도서관 직원 전용</small>
+<div id="lock" hidden><div class="lk" id="lkPanel" role="dialog" aria-label="도어록">
+  <b id="lkTitle">도어록</b><small>관평도서관 직원 전용</small>
   <div class="lk-dots" id="lkDots"></div>
   <div class="lk-msg" id="lkMsg"></div>
   <div class="lk-pad" id="lkPad"></div>
   <button class="lk-close" id="lkClose">닫기 · Esc</button>
 </div></div>
 <div id="writer" hidden><div class="sp wr" role="dialog" aria-label="새 책 쓰기">
-  <div class="sp-head"><div><b>새 책 쓰기</b><small>관평 원고실 · 완료를 누르면 사무실 '새 책' 서가에 꽂혀요</small></div><button id="wrClose">닫기 · Esc</button></div>
+  <div class="sp-head"><div><b>새 책 쓰기</b><small>관평 원고실 · 완료를 누르면 종합관리실 '새 책' 서가에 꽂혀요</small></div><button id="wrClose">닫기 · Esc</button></div>
   <div class="wr-row"><label>제목<input id="wrTitle" maxlength="40" autocomplete="off" placeholder="책 제목"></label><label>지은이<input id="wrAuthor" maxlength="20" autocomplete="off" placeholder="이름"></label></div>
   <div class="wr-row"><label>장르<select id="wrGenre"></select></label><div class="wr-pick">표지 색<div class="wr-colors" id="wrColors"></div></div></div>
   <textarea id="wrBody" placeholder="여기에 이야기를 써 주세요.&#10;&#10;빈 줄을 넣으면 문단이 나뉘고, 글이 길면 저절로 여러 쪽이 돼요."></textarea>
@@ -381,7 +381,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
   if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
   if(e.code==='KeyM' && hooks.relook && !e.repeat && started) hooks.relook();
-  if(/^Digit[1-3]$/.test(e.code) && hooks.elevPick && !e.repeat && started) hooks.elevPick(+e.code.slice(5)-1);
+  if(/^Digit[1-4]$/.test(e.code) && hooks.elevPick && !e.repeat && started) hooks.elevPick(+e.code.slice(5)-1);
   if(e.code==='KeyH' && !e.repeat){ const bd=$('lgBody'); bd.hidden=!bd.hidden; $('lgState').textContent=bd.hidden?'보기':'숨기기'; }
   if(e.code==='Space' && !e.repeat) jumpQueued = true;
   keys.add(e.code);
@@ -703,7 +703,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const bandF=Z0+.6;
     slab(-RW-.45,RW+.3,F2,BH,Z0,bandF,X.orange,2.4);
     slab(RW+.3,RW+4.4,F2,BH,RL-10,bandF,X.orange,2.4);
-    slab(-RW-.45,RW+4.4,BH,BH+.08,RL-10.1,bandF+.02,X.concrete);
+    for(const [a,b,c,d] of [[-RW-.45,RW+4.4,RL-10.1,21.9],[-RW-.45,3.6,21.9,bandF+.02],[5.95,RW+4.4,21.9,bandF+.02],[3.6,5.95,RL,bandF+.02]]) slab(a,b,BH,BH+.08,c,d,X.concrete);
     { // window strip with fine mullions
       const s=new THREE.Mesh(new THREE.PlaneGeometry(10.8,2.2),X.strip); s.position.set(6.3,10.1,bandF+.004); scene.add(s);
       slab(.85,11.75,8.94,9.0,bandF,bandF+.06,X.alu); slab(.85,11.75,11.2,11.26,bandF,bandF+.06,X.alu);
@@ -724,7 +724,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       const rail=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,Math.hypot(n*run,F1),8),X.steel); rail.position.set(sx1-.02,F1/2+1.0,RL+.4-n*run/2); rail.rotation.x=-Math.atan2(n*run,F1); scene.add(rail);
     }
     // building sides and roof
-    slab(-RW-.45,RW+.3,BH-.3,BH,-RL-.3,Z0,X.concrete);
+    for(const [a,b,c,d] of [[-RW-.45,RW+.3,-RL-.3,21.9],[-RW-.45,3.6,21.9,Z0],[5.95,RW+.3,21.9,Z0],[3.6,5.95,RL,Z0]]) slab(a,b,BH-.3,BH,c,d,X.concrete);
     for(const sd of [-1,1]) slab(sd<0?-RW-.45:RW+.3, sd<0?-RW-.3:RW+.45, BH, BH+.9, -RL-.3, RL-10.1, X.concrete);
     slab(-RW-.45,RW+.3,BH,BH+.9,-RL-.45,-RL-.3,X.concrete);
     // solar panels tilted up over the front of the roof
@@ -1122,7 +1122,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       collideBox(sd<0?-RW:LOBBY_X, sd<0?-LOBBY_X:RW, 0, RH, z-.1, z+.1);
       const px0 = sd<0 ? -LOBBY_X-.1 : LOBBY_X-.1;
       const pm = sd<0?[X.granite,X.paint,X.paint,X.paint,X.paint,X.paint]:[X.paint,X.granite,X.paint,X.paint,X.paint,X.paint];
-      holedWall(z+.1,RL,0,RH,[sd<0?[22.55,23.6,0,2.12]:[20.15,21.2,0,2.12]],(a,b,c,d)=>{ if(d-c<.01) return; slab(px0,px0+.2,c,d,a,b,pm,1.2); collideBox(px0,px0+.2,c,d,a,b); });
+      if(sd<0) holedWall(z+.1,RL,0,RH,[sd<0?[22.55,23.6,0,2.12]:[20.15,21.2,0,2.12]],(a,b,c,d)=>{ if(d-c<.01) return; slab(px0,px0+.2,c,d,a,b,pm,1.2); collideBox(px0,px0+.2,c,d,a,b); });
     }
     const innerBand=new THREE.MeshStandardMaterial({map:bandTex('관평도서관','어린이자료실'),transparent:true,side:THREE.DoubleSide,roughness:.6,depthWrite:false});
     const frostLow=(parent,w,x)=>{ const f=new THREE.Mesh(new THREE.PlaneGeometry(w-.1,.9),X.frost); f.position.set(x,.56,0); parent.add(f); };
@@ -1223,12 +1223,12 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const p=new THREE.Mesh(new THREE.PlaneGeometry(.6,.225),new THREE.MeshBasicMaterial({map:rt})); p.position.set(0,.65,.252); g.add(p);
     collide(g);
   }
-  function plant(x,z,s=1){
-    const g=new THREE.Group(); g.position.set(x,0,z); g.scale.setScalar(s); scene.add(g);
+  function plant(x,z,s=1,y=0){
+    const g=new THREE.Group(); g.position.set(x,y,z); g.scale.setScalar(s); scene.add(g);
     const pot=new THREE.Mesh(new THREE.CylinderGeometry(.26,.2,.55,24),M.pot); pot.position.y=.275; g.add(pot);
     const stem=new THREE.Mesh(new THREE.CylinderGeometry(.02,.03,1.2,6),M.walnut); stem.position.y=1.1; g.add(stem);
     for(let i=0;i<14;i++){ const l=new THREE.Mesh(new THREE.SphereGeometry(rr(.16,.26),10,8),M.leaf); l.scale.set(1,.5,1.3); l.position.set(rr(-.35,.35),rr(1.0,1.9),rr(-.35,.35)); l.rotation.set(rr(-1,1),rr(0,6),rr(-1,1)); g.add(l); }
-    collideBox(x-.28*s,x+.28*s,0,.55*s,z-.28*s,z+.28*s);
+    collideBox(x-.28*s,x+.28*s,y,y+.55*s,z-.28*s,z+.28*s);
   }
   plant(5.25,LOBBY_Z+.55,.9); plant(-5.3,RL-.6,.9);
   { // slatted bench along the left lobby wall
@@ -1241,7 +1241,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     g.strokeStyle='#9c8a6a'; g.lineWidth=6; g.strokeRect(3,3,w-6,h-6);
     g.fillStyle='#fff'; roundRect(g,30,40,w-60,60,10); g.fill(); g.fillStyle='#3b3631'; g.font='900 30px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText(label,w/2,82); };
   sign(.9,.62,360,248,(g,w,h)=>{ g.fillStyle='#fff'; g.fillRect(0,0,w,h); g.fillStyle='#1f6fd6'; g.fillRect(0,0,w,40); g.fillStyle='#fff'; g.font='900 22px "Noto Sans KR", sans-serif'; g.fillText('층별 안내',14,28);
-    [['1F','어린이자료실 · 로비 · 수유실'],['2F','종합자료실 · 열람실'],['3F','강의실 · 사무실'],['옥상','태양광 발전 설비']].forEach(([f,t],i)=>{ g.fillStyle='#e8903a'; g.fillRect(14,58+i*46,54,34); g.fillStyle='#fff'; g.font='900 18px "Noto Sans KR", sans-serif'; g.fillText(f,22,81+i*46); g.fillStyle='#3b3631'; g.font='400 18px "Noto Sans KR", sans-serif'; g.fillText(t,80,81+i*46); }); },scene,-LOBBY_X+.105,1.55,19.5,Math.PI/2);
+    [['1F','어린이자료실 · 로비 · 수유실'],['2F','종합자료실 · 열람 테이블'],['3F','열람실 · 대강당 · 문화나눔공간'],['옥상','태양광 발전 설비']].forEach(([f,t],i)=>{ g.fillStyle='#e8903a'; g.fillRect(14,58+i*46,54,34); g.fillStyle='#fff'; g.font='900 18px "Noto Sans KR", sans-serif'; g.fillText(f,22,81+i*46); g.fillStyle='#3b3631'; g.font='400 18px "Noto Sans KR", sans-serif'; g.fillText(t,80,81+i*46); }); },scene,-LOBBY_X+.105,1.55,19.5,Math.PI/2);
   sign(.8,1.0,240,300,(g,w,h)=>{ g.fillStyle='#c9a26b'; g.fillRect(0,0,w,h); g.fillStyle='#b58f5a'; for(let i=0;i<300;i++) g.fillRect(rand()*w,rand()*h,2,2);
     [['#fff8d6',18,20,110,140],['#dff1ff',130,30,92,120],['#ffe2ec',26,170,96,110],['#e7f7df',134,164,88,118]].forEach(([c,x,y,ww,hh])=>{ g.fillStyle=c; g.fillRect(x,y,ww,hh); g.fillStyle='rgba(60,60,60,.6)'; for(let k=0;k<5;k++) g.fillRect(x+10,y+20+k*18,ww-20,4); g.fillStyle='#d94b4b'; g.beginPath(); g.arc(x+ww/2,y+6,5,0,7); g.fill(); }); },scene,LOBBY_X-.105,1.6,22.9,-Math.PI/2);
   { const d=new THREE.Mesh(new THREE.SphereGeometry(.07,16,8,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x222222,roughness:.1})); d.rotation.x=Math.PI; d.position.set(3.0,RH,22.6); scene.add(d); }
@@ -1266,17 +1266,17 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   // hinged room doors: the leaf swings into the room; a closed leaf blocks the doorway
   const roomDoors=[];
   const inRoom=d=>d.side*(player.x-d.x)>0;
-  function roomDoor(x,z0,z1,side,label,locked){
+  function roomDoor(x,z0,z1,side,label,locked,y0=0){
     const w=z1-z0, H=2.12;
-    slab(x-.11,x+.11,H,H+.06,z0-.06,z1+.06,X.white); slab(x-.11,x+.11,0,H,z0-.06,z0,X.white); slab(x-.11,x+.11,0,H,z1,z1+.06,X.white);
-    const hinge=new THREE.Group(); hinge.position.set(x,0,z0); scene.add(hinge);
+    slab(x-.11,x+.11,y0+H,y0+H+.06,z0-.06,z1+.06,X.white); slab(x-.11,x+.11,y0,y0+H,z0-.06,z0,X.white); slab(x-.11,x+.11,y0,y0+H,z1,z1+.06,X.white);
+    const hinge=new THREE.Group(); hinge.position.set(x,y0,z0); scene.add(hinge);
     box(.045,H-.02,w-.02,solid('#c9b48e'),0,(H-.02)/2,w/2,hinge);
     for(const f of [-1,1]){
       sign(w-.04,H-.06,200,430,doorDraw(label),hinge,f*.0235,(H-.02)/2,w/2,f*Math.PI/2,0,false);
       box(.05,.022,.15,X.steel,f*.055,1.0,w-.17,hinge); box(.03,.07,.07,X.steel,f*.035,1.0,w-.1,hinge);
     }
-    const d={x,z0,z1,zc:(z0+z1)/2,side,label,locked,hinge,amt:0,target:0,openT:0};
-    colliders.push(d.col={x0:x-.1,x1:x+.1,y0:0,y1:H,z0,z1,door:d});
+    const d={x,y0,z0,z1,zc:(z0+z1)/2,side,label,locked,hinge,amt:0,target:0,openT:0};
+    colliders.push(d.col={x0:x-.1,x1:x+.1,y0,y1:y0+H,z0,z1,door:d});
     act(hinge,()=>[`${label} 문`, d.target?'클릭하거나 E로 닫기' : (d.locked && !inRoom(d)) ? (hasPasskey()?'잠겨 있어요 · 도어록 비밀번호를 누르세요':'잠겨 있어요 · 보안 패스키가 필요해요') : '클릭하거나 E로 열기'],()=>useDoor(d));
     roomDoors.push(d); return d;
   }
@@ -1288,17 +1288,16 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(d.locked && !inRoom(d)){ openLock(d); return; }
     d.target=1; d.openT=0; tone([660],.06,'sine',.03); mpAct('door'); mpDoor(roomDoors.indexOf(d),1);
   }
-  function nearRoomDoor(){ if(player.y>1.5) return null; let best=null, bd=1.8; for(const d of roomDoors){ const k=Math.hypot(player.x-d.x,player.z-d.zc); if(k<bd){ bd=k; best=d; } } return best; }
-  const officeDoor=roomDoor(LOBBY_X,20.15,21.2,1,'사무실',true);
+  function nearRoomDoor(){ let best=null, bd=1.8; for(const d of roomDoors){ if(Math.abs(player.y-d.y0)>1.5) continue; const k=Math.hypot(player.x-d.x,player.z-d.zc); if(k<bd){ bd=k; best=d; } } return best; }
   roomDoor(-LOBBY_X,22.55,23.6,-1,'수유실',false);
 
-  // the keypad door lock beside the office door (lobby side)
-  { const g=new THREE.Group(); g.position.set(LOBBY_X-.1,1.24,21.5); g.rotation.y=-Math.PI/2; scene.add(g);
+  // a keypad door lock mounted beside a locked door
+  function keypadAt(x,y,z,ry,door){ const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; scene.add(g);
     box(.12,.28,.04,solid('#1b1d21'),0,0,.02,g);
     sign(.1,.25,100,250,(c,w,h)=>{ c.fillStyle='#16181c'; c.fillRect(0,0,w,h); c.fillStyle='#2f8fe0'; c.fillRect(14,14,w-28,26); c.fillStyle='#bfe3ff'; c.font='700 14px sans-serif'; c.textAlign='center'; c.fillText('LOCK',w/2,32);
       ['1','2','3','4','5','6','7','8','9','*','0','#'].forEach((k,i)=>{ const x=22+(i%3)*28, y=72+Math.floor(i/3)*42; c.fillStyle='#2a2d33'; c.beginPath(); c.arc(x,y,11,0,7); c.fill(); c.fillStyle='#e8eef5'; c.font='700 13px sans-serif'; c.fillText(k,x,y+5); });
       c.fillStyle='#9aa3ad'; c.font='700 10px sans-serif'; c.fillText('DIGITAL',w/2,h-10); },g,0,0,.041,0,.35,false);
-    act(g,()=>['사무실 도어록', officeDoor.target?'문이 열려 있어요':hasPasskey()?'클릭해서 비밀번호 누르기':'보안 패스키가 있어야 누를 수 있어요'],()=>{ if(officeDoor.target) toast('문이 이미 열려 있어요.'); else openLock(officeDoor); });
+    act(g,()=>[`${door.label} 도어록`, door.target?'문이 열려 있어요':hasPasskey()?'클릭해서 비밀번호 누르기':'보안 패스키가 있어야 누를 수 있어요'],()=>{ if(door.target) toast('문이 이미 열려 있어요.'); else openLock(door); });
   }
   const PASSCODE='xxxx';
   /* ---------- security passkey: only issued from the name box, to the staff name with the staff password ---------- */
@@ -1339,7 +1338,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       if(cyrb53(v,108)===STAFF_HASH){
         grantPasskey(); setMyName(STAFF_NAME); tone([784,988,1175,1568],.11,'sine',.05);
         $('idMsg').textContent='확인됐어요 — 보안 패스키를 받았어요'; $('idMsg').className='lk-msg ok';
-        setTimeout(()=>{ closeSearch(true); toast('🔑 보안 패스키를 받았어요. 이제 사무실 도어록을 누를 수 있어요.'); },800);
+        setTimeout(()=>{ closeSearch(true); toast('🔑 보안 패스키(관리자 키)를 받았어요. 이제 엘리베이터에 4층 버튼이 보이고, 도어록도 누를 수 있어요.'); },800);
       } else {
         tone([220,175],.16,'square',.04); idShow('pass','비밀번호가 틀렸어요. 보안 패스키를 드릴 수 없어요.','bad');
         const p=$('idPanel'); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
@@ -1358,7 +1357,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function openLock(d){
     if(!hasPasskey()){ tone([220,175],.16,'square',.04); toast('🔒 보안 패스키가 없어서 도어록을 누를 수 없어요. 보안 패스키는 이름 입력에서만 받을 수 있어요.'); return; }
-    lockDoor=d; lkCode=''; lkBusy=false; lkRender('비밀번호 4자리를 누르세요','');
+    lockDoor=d; lkCode=''; lkBusy=false; $('lkTitle').textContent=`${d.label} 도어록`; lkRender('비밀번호 4자리를 누르세요','');
     openPanel('lock',e=>{ if(/^[0-9]$/.test(e.key)) lkPress(e.key); else if(e.code==='Backspace') lkPress('*'); else if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); lkPress('#'); } });
   }
   function lkPress(k){
@@ -1371,9 +1370,9 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function lkCheck(){
     if(lkBusy) return;
-    if(lkCode===PASSCODE){
+    if(lkCode===(lockDoor.code||PASSCODE)){
       lkBusy=true; lkRender('띠리릭 — 문이 열렸어요','ok'); tone([784,988,1175,1568],.11,'sine',.05);
-      setTimeout(()=>{ closeSearch(true); lockDoor.target=1; lockDoor.openT=0; mpAct('door'); mpDoor(roomDoors.indexOf(lockDoor),1); toast('사무실 문이 열렸어요. 들어가 보세요.'); },700);
+      setTimeout(()=>{ closeSearch(true); lockDoor.target=1; lockDoor.openT=0; mpAct('door'); mpDoor(roomDoors.indexOf(lockDoor),1); toast(`${lockDoor.label} 문이 열렸어요. 들어가 보세요.`); },700);
     } else {
       const n=lkCode.length; lkCode='';
       lkRender(n?'비밀번호가 틀렸어요. 다시 눌러 주세요.':'숫자 4자리를 먼저 눌러 주세요.','bad'); tone([220,175],.16,'square',.04);
@@ -1382,16 +1381,16 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
 
   // shared office furniture
-  function officeDesk(x0,x1,z0,z1){ slab(x0,x1,.72,.75,z0,z1,M.oak); for(const xx of [x0+.03,x1-.03]) slab(xx-.02,xx+.02,0,.72,z0+.03,z1-.03,X.white); collideBox(x0,x1,0,.75,z0,z1); }
-  function monitorAt(x,z,ry,mat,w=.58,h=.34){
-    const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; scene.add(g);
+  function officeDesk(x0,x1,z0,z1,y=0){ slab(x0,x1,y+.72,y+.75,z0,z1,M.oak); for(const xx of [x0+.03,x1-.03]) slab(xx-.02,xx+.02,y,y+.72,z0+.03,z1-.03,X.white); collideBox(x0,x1,y,y+.75,z0,z1); }
+  function monitorAt(x,z,ry,mat,w=.58,h=.34,y=0){
+    const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; scene.add(g);
     box(.22,.015,.18,M.black,0,.758,-.02,g); box(.04,.2,.03,M.black,0,.86,-.05,g); box(w+.04,h+.04,.03,M.black,0,1.1,-.02,g);
     const s=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat); s.position.set(0,1.1,-.004); g.add(s);
     box(.44,.018,.15,solid('#2a2d31'),0,.76,.26,g);
     return g;
   }
-  function officeChair(x,z,ry,name){
-    const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry; scene.add(g);
+  function officeChair(x,z,ry,name,y=0){
+    const g=new THREE.Group(); g.position.set(x,y,z); g.rotation.y=ry; scene.add(g);
     const blk=solid('#2b2d31');
     box(.48,.07,.46,blk,0,.47,0,g); box(.46,.52,.06,blk,0,.84,.22,g); box(.04,.34,.04,X.steel,0,.27,0,g);
     for(let k=0;k<5;k++){ const l=box(.3,.03,.04,X.steel,0,.07,0,g); l.geometry.translate(.15,0,0); l.rotation.y=k*Math.PI*2/5; }
@@ -1399,63 +1398,87 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   const screenTex=(draw)=>{ const t=ctex(512,300,draw); return new THREE.MeshStandardMaterial({map:t,emissive:0xffffff,emissiveMap:t,emissiveIntensity:.75,roughness:.3}); };
 
-  /* office: CCTV wall, a writing PC, the shelf for books written here */
   const OX0=LOBBY_X+.1, OZ0=LOBBY_Z+.1;
-  { const t=ctex(256,256,(g,w,h)=>{ for(let y=0;y<h;y+=128) for(let x=0;x<w;x+=128){ g.fillStyle=`hsl(212,${rr(10,16)}%,${rr(36,42)}%)`; g.fillRect(x,y,128,128); g.strokeStyle='rgba(255,255,255,.05)'; for(let k=4;k<128;k+=6){ g.beginPath(); if((x+y)/128%2){ g.moveTo(x+k,y); g.lineTo(x+k,y+128); } else { g.moveTo(x,y+k); g.lineTo(x+128,y+k); } g.stroke(); } } },{repeat:[(RW-OX0)/1.0,(RL-OZ0)/1.0]});
-    const c=new THREE.Mesh(new THREE.PlaneGeometry(RW-OX0,RL-OZ0),new THREE.MeshStandardMaterial({map:t,roughness:.95})); c.rotation.x=-Math.PI/2; c.position.set((OX0+RW)/2,.004,(OZ0+RL)/2); scene.add(c);
-    slab(OX0,RW,0,RH,RL-.012,RL,X.paint);
+  /* ---------- 1F lobby rest area where the office used to be ---------- */
+  { bookTruck(7.7,19.85,0, BOOKS.slice(30,39), '로비 북트럭 · 이번 주 신착');
+    const g=new THREE.Group(); g.position.set(9.8,0,RL-.42); scene.add(g);
+    box(2.6,.42,.5,M.oak,0,.21,0,g); box(2.6,.08,.52,X.teal,0,.46,0,g); box(2.6,.42,.06,X.teal,0,.7,.22,g); collide(g);
+    bindMany(g,[-.8,.8].map(x=>addSeat(g,x,0,1.14,'로비 벤치',-.7,false)));
+    const wc=new THREE.Group(); wc.position.set(12.55,0,LOBBY_Z+.45); scene.add(wc);
+    box(.34,1.0,.34,X.white,0,.5,0,wc); const bt=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.36,20),new THREE.MeshStandardMaterial({color:0x9fd0f0,transparent:true,opacity:.55,roughness:.1})); bt.position.y=1.18; wc.add(bt); collide(wc);
+    sign(1.7,1.0,680,400,(c,w,h)=>{ c.fillStyle='#fbfcfd'; c.fillRect(0,0,w,h); c.fillStyle='#e8903a'; c.fillRect(0,0,w,80); c.fillStyle='#fff'; c.font='900 44px "Noto Sans KR", sans-serif'; c.fillText('도서관 소식',30,56);
+      c.fillStyle='#2a2d31'; c.font='400 30px "Noto Sans KR", sans-serif'; ['· 2층 종합자료실 문을 열었어요','· 3층 대강당 · 작가와의 만남','· 토 11시 동화 구연 (1층)','· 새 책은 북트럭에서 먼저 만나요'].forEach((t,i)=>c.fillText(t,30,140+i*62)); },scene,RW-.02,1.6,21.2,-Math.PI/2,0,false);
+    plant(6.75,23.45,.8);
+    zones.push({x0:LOBBY_X,x1:RW,z0:LOBBY_Z,z1:RL,label:'로비 휴게 공간'});
   }
-  officeDesk(8.6,11.0,OZ0+.05,18.95); officeChair(9.8,19.6,0,'관제석 의자');
-  box(.44,.018,.15,solid('#2a2d31'),9.8,.76,18.7);
+
+  /* ---------- rooftop (4F): the general control room behind an opaque inner door ---------- */
+  const SHAFT={x0:3.6,x1:5.95,z0:21.9,z1:RL, dx0:4.35,dx1:5.45};   // elevator shaft in the lobby's front-right corner
+  const R4=BH+.1, RC=R4+RH, RX0=1.6, RX1=12.6, RZ0=8, RZ1=RL;
+  { const ctlFloor=new THREE.MeshStandardMaterial({color:new THREE.Color('#4a5563').convertSRGBToLinear(),roughness:.9,map:texFelt});
+    for(const [a,b,c,d] of [[RX0,RX1,RZ0,SHAFT.z0],[RX0,SHAFT.x0,SHAFT.z0,RZ1],[SHAFT.x1,RX1,SHAFT.z0,RZ1]]){ slab(a,b,BH,R4,c,d,[X.white,X.white,ctlFloor,X.white,X.white,X.white],1.6); collideBox(a,b,BH-.3,R4,c,d); }
+    slab(RX0-.1,RX1+.1,RC,RC+.2,RZ0-.1,RZ1,X.concrete);
+    const rw=(x0,x1,z0,z1)=>{ slab(x0,x1,R4,RC,z0,z1,X.white); collideBox(x0,x1,R4,RC,z0,z1); };
+    rw(RX0-.1,RX0,RZ0-.1,RZ1); rw(RX0-.1,RX1+.1,RZ0-.1,RZ0); rw(RX0,RX1,RZ1-.1,RZ1);
+    const WIN=[[9.2,11.6,R4+1.0,R4+2.6],[13.0,15.4,R4+1.0,R4+2.6]];
+    holedWall(RZ0-.1,RZ1,R4,RC,WIN,(a,b,c,d)=>{ slab(RX1,RX1+.1,c,d,a,b,X.white); collideBox(RX1,RX1+.1,c,d,a,b); });
+    WIN.forEach(([a,b,c,d])=>windowIn(RX1,(c+d)/2,(a+b)/2,b-a,d-c,-Math.PI/2,.3));
+    // vestibule walls; the inner door (중문) is solid so nobody can see in
+    const iw=(x0,x1,z0,z1,y0=R4,y1=RC)=>{ slab(x0,x1,y0,y1,z0,z1,X.paint); collideBox(x0,x1,y0,y1,z0,z1); };
+    iw(RX0,7.1,15.95,16.05); iw(7.1,7.3,15.95,18.14); iw(7.1,7.3,19.36,RZ1-.1); iw(7.1,7.3,18.14,19.36,R4+2.18,RC);
+  }
+  const ctlDoor=roomDoor(7.2,18.2,19.3,1,'종합관리실',true,R4); ctlDoor.code='xxxx';
+  keypadAt(7.08,R4+1.24,19.62,-Math.PI/2,ctlDoor);
+  sign(1.1,.34,440,136,(c,w,h)=>{ c.fillStyle='#1d2b3a'; c.fillRect(0,0,w,h); c.fillStyle='#ff5a36'; c.fillRect(0,0,14,h); c.fillStyle='#fff'; c.font='900 46px "Noto Sans KR", sans-serif'; c.fillText('종합관리실',34,64); c.fillStyle='#ffc531'; c.font='700 28px "Noto Sans KR", sans-serif'; c.fillText('관계자 외 출입금지',34,112); },scene,7.09,R4+2.5,18.75,-Math.PI/2,.15);
+  sign(.6,.42,240,168,(c,w,h)=>{ c.fillStyle='#fff7d6'; c.fillRect(0,0,w,h); c.fillStyle='#d63b3b'; c.font='900 30px "Noto Sans KR", sans-serif'; c.fillText('보안 구역',22,50); c.fillStyle='#333'; c.font='500 20px "Noto Sans KR", sans-serif'; c.fillText('CCTV 녹화 중',22,96); c.fillText('비밀번호 노출 주의',22,132); },scene,RX0+.02,R4+1.6,18.8,Math.PI/2,.05);
+  { const ex=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.5,16),solid('#d63b3b')); ex.position.set(RX0+.2,R4+.25,16.4); scene.add(ex); }
+  { const d=new THREE.Group(); d.position.set(RX0+.03,R4,20.2); d.rotation.y=Math.PI/2; scene.add(d);
+    box(1.0,2.12,.05,solid('#7f8a94'),0,1.06,0,d); box(.6,.05,.08,X.steel,0,1.0,.04,d);
+    sign(.5,.16,240,76,(c,w,h)=>{ c.fillStyle='#1c9a52'; c.fillRect(0,0,w,h); c.fillStyle='#fff'; c.font='800 34px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('옥상 출입문',w/2,52); },d,0,2.3,.04,0,.3,false);
+    collide(d); act(d,()=>['옥상 출입문','잠겨 있어요'],()=>toast('옥상 출입문은 안전을 위해 잠겨 있어요.')); }
+  zones.push({x0:RX0,x1:7.2,z0:16,z1:RZ1,label:'옥상 전실 · 관계자 외 출입금지',fl:3});
+  zones.push({x0:RX0,x1:RX1,z0:RZ0,z1:RZ1,label:'옥상 종합관리실 · 종합 관제',fl:3});
+
+  // control room: a 20-screen CCTV wall, the operators' console, the writing PC and the new-books shelf
+  officeDesk(3.0,11.2,9.7,10.5,R4);
+  const statMat=(title,fn)=>screenTex((g,w,h)=>{ g.fillStyle='#0f1620'; g.fillRect(0,0,w,h); g.fillStyle='#2f6fed'; g.fillRect(0,0,w,44); g.fillStyle='#fff'; g.font='900 22px "Noto Sans KR", sans-serif'; g.fillText(title,16,30); fn(g,w,h); });
+  monitorAt(4.0,10.15,0,statMat('층별 이용자',(g,w,h)=>{ ['1F','2F','3F'].forEach((f,i)=>{ g.fillStyle='#8fb4ff'; g.font='700 22px sans-serif'; g.fillText(f,20,96+i*70); g.fillStyle=['#ff5a36','#ffc531','#17a382'][i]; g.fillRect(70,76+i*70,rr(120,380),28); }); }),.58,.34,R4);
+  monitorAt(6.3,10.15,0,statMat('출입 기록',(g,w,h)=>{ g.font='400 17px monospace'; for(let r=0;r<8;r++){ g.fillStyle=r%2?'#9fb3c8':'#d7e3f0'; g.fillText(`${String(9+r).padStart(2,'0')}:${String(r*7%60).padStart(2,'0')}  ${['1F 정문','2F 게이트','3F 대강당','1F 수유실','2F 게이트','3F 열람실','1F 정문','4F 중문'][r]}  정상`,16,76+r*27); } }),.58,.34,R4);
+  monitorAt(8.6,10.15,0,statMat('건물 도면',(g,w,h)=>{ g.strokeStyle='#5fa8ff'; g.lineWidth=3; for(let i=0;i<3;i++){ g.strokeRect(30+i*160,70,140,200); g.fillStyle='#8fb4ff'; g.font='700 20px sans-serif'; g.fillText(`${i+1}F`,40+i*160,98); } g.fillStyle='#ff5a36'; for(let k=0;k<9;k++){ g.beginPath(); g.arc(50+(k%3)*160+rr(10,100),130+rr(0,120),5,0,7); g.fill(); } }),.58,.34,R4);
+  monitorAt(10.6,10.15,0,statMat('설비 상태',(g,w,h)=>{ [['엘리베이터','정상'],['태양광 발전','12.4 kW'],['냉난방','24℃'],['출입 통제','작동 중'],['화재 감지','이상 없음']].forEach(([a,b],i)=>{ g.fillStyle='#d7e3f0'; g.font='500 20px "Noto Sans KR", sans-serif'; g.fillText(a,20,86+i*42); g.fillStyle='#17d39a'; g.fillText(b,300,86+i*42); }); }),.58,.34,R4);
+  for(const x of [4.0,6.3,8.6,10.6]) officeChair(x,11.15,0,'관제석 의자',R4);
   const cctvScreens=new THREE.Group(); scene.add(cctvScreens);
-  sign(1.6,.16,640,64,(g,w,h)=>{ g.fillStyle='#1b1d21'; roundRect(g,0,0,w,h,12); g.fill(); g.fillStyle='#ff4d4d'; g.beginPath(); g.arc(30,32,9,0,7); g.fill(); g.fillStyle='#e8eef5'; g.font='700 30px "Noto Sans KR", sans-serif'; g.textBaseline='middle'; g.fillText('CCTV 통합 관제 · 실시간 화면',52,34); },scene,9.8,2.28,OZ0+.02,0,.3,false);
-  officeDesk(8.4,10.8,23.2,RL-.05); officeDesk(11.0,12.95,23.2,RL-.05);
+  slab(4.35,10.25,R4+.7,R4+3.14,RZ0,RZ0+.05,M.black);
+  sign(2.4,.18,900,66,(g,w,h)=>{ g.fillStyle='#1b1d21'; roundRect(g,0,0,w,h,14); g.fill(); g.fillStyle='#ff4d4d'; g.beginPath(); g.arc(30,33,10,0,7); g.fill(); g.fillStyle='#e8eef5'; g.font='700 32px "Noto Sans KR", sans-serif'; g.textBaseline='middle'; g.fillText('종합 관제 · 1F 2F 3F 4F 실시간 CCTV',56,35); },scene,3.0,R4+2.3,RZ0+.06,0,.4,false);
   const writeMat=screenTex((g,w,h)=>{ g.fillStyle='#f7f5f0'; g.fillRect(0,0,w,h); g.fillStyle='#e8903a'; g.fillRect(0,0,w,52); logo(g,18,22,.3,'#fff');
     g.fillStyle='#fff'; g.font='900 26px "Noto Sans KR", sans-serif'; g.fillText('관평 원고실 · 새 책 쓰기',58,36);
-    g.fillStyle='#3b3631'; g.font='800 28px "Nanum Myeongjo", serif'; g.fillText('제목 없는 원고',30,104);
+    g.fillStyle='#1d1e22'; g.font='900 28px "Noto Sans KR", sans-serif'; g.fillText('제목 없는 원고',30,104);
     g.fillStyle='rgba(60,50,40,.22)'; for(let y=134;y<236;y+=18) g.fillRect(30,y,rr(330,450),7);
-    g.fillStyle='#3b3631'; g.fillRect(30,240,3,18);
     g.fillStyle='#e8903a'; roundRect(g,w-170,h-46,150,34,17); g.fill(); g.fillStyle='#fff'; g.font='700 17px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.fillText('클릭해서 쓰기',w-95,h-23); });
-  act(monitorAt(9.6,23.62,Math.PI,writeMat),()=>['새 책 쓰기 PC','클릭해서 원고 쓰기 · 완료하면 서가에 꽂혀요'],()=>openWriter());
-  officeChair(9.6,22.62,Math.PI,'원고실 의자');
-  monitorAt(11.95,23.62,Math.PI,screenTex((g,w,h)=>{ g.fillStyle='#f4f7fb'; g.fillRect(0,0,w,h); g.fillStyle='#1f6fd6'; g.fillRect(0,0,w,46); g.fillStyle='#fff'; g.font='900 22px "Noto Sans KR", sans-serif'; g.fillText('대출·반납 현황',18,31);
-    for(let r=0;r<7;r++){ g.fillStyle=r%2?'#fff':'#eaf1fa'; g.fillRect(14,60+r*32,w-28,32); g.fillStyle='#3b3631'; g.font='400 15px "Noto Sans KR", sans-serif'; g.fillText(['소설','동화','과학','역사','요리','시','여행'][r],26,81+r*32); g.fillStyle='#e8903a'; g.fillRect(120,70+r*32,rr(60,300),12); } }));
-  officeChair(12.0,22.62,Math.PI,'사서 의자');
-  { // desk lamp, mug, a stack of manuscripts
-    const lamp=new THREE.Group(); lamp.position.set(8.75,.75,23.75); scene.add(lamp);
-    box(.14,.02,.14,M.black,0,.01,0,lamp); const arm=box(.02,.42,.02,M.black,0,.22,0,lamp); arm.rotation.z=.25; const sh=new THREE.Mesh(new THREE.ConeGeometry(.08,.12,20,1,true),new THREE.MeshStandardMaterial({color:new THREE.Color('#e8903a').convertSRGBToLinear(),side:THREE.DoubleSide})); sh.position.set(-.1,.42,0); sh.rotation.z=.5; lamp.add(sh);
-    const mug=new THREE.Mesh(new THREE.CylinderGeometry(.04,.035,.09,16),solid('#f4f4f2')); mug.position.set(10.35,.795,23.5); scene.add(mug);
-    for(let k=0;k<4;k++){ const p=box(.21,.012,.29,X.white,10.25,.756+k*.012,23.8); p.rotation.y=rr(-.15,.15); }
-  }
-  // the shelf where books written on the office PC are kept
+  officeDesk(11.75,12.55,17.4,19.6,R4);
+  act(monitorAt(12.2,18.5,-Math.PI/2,writeMat,.58,.34,R4),()=>['새 책 쓰기 PC','클릭해서 원고 쓰기 · 완료하면 서가에 꽂혀요'],()=>openWriter());
+  officeChair(11.2,18.5,-Math.PI/2,'원고실 의자',R4);
   const myShelf=bookcase({len:2.2,hgt:1.9,dep:.34,rows:4,bays:2,double:false});
-  myShelf.position.set(RW-.17,0,21.0); myShelf.rotation.y=-Math.PI/2; scene.add(myShelf); collide(myShelf);
-  sign(1.1,.24,440,96,(g,w,h)=>{ g.clearRect(0,0,w,h); roundRect(g,2,2,w-4,h-4,40); g.fillStyle='#e8903a'; g.fill(); g.fillStyle='#fff'; g.font='900 34px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('새 책 · 여기서 쓴 책',w/2,h/2+2); },myShelf,0,2.03,.13,0,.15,false,true);
+  myShelf.position.set(9.6,R4,RZ1-.1-.17); myShelf.rotation.y=Math.PI; scene.add(myShelf); collide(myShelf);
+  sign(1.1,.24,440,96,(g,w,h)=>{ g.clearRect(0,0,w,h); roundRect(g,2,2,w-4,h-4,40); g.fillStyle='#e8903a'; g.fill(); g.fillStyle='#fff'; g.font='900 34px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('새 책 · 여기서 쓴 책',w/2,h/2+2); },myShelf,0,2.03,.18,0,.1,false,true);
   const mySlots=[];
   { const {rowH,plinth,bw}=myShelf.userData; for(let r=3;r>=0;r--) for(let b=0;b<2;b++) for(let x=-1.1+b*bw+.06; x<-1.1+(b+1)*bw-.07; x+=.062) mySlots.push([x, plinth+r*rowH+.026]); }
-  { // filing cabinet with a printer, water cooler, whiteboard, plant, a book truck waiting to be catalogued
-    const g=new THREE.Group(); g.position.set(6.9,0,OZ0+.32); scene.add(g);
-    box(.8,1.3,.6,solid('#a7adb3'),0,.65,0,g); for(let k=0;k<4;k++){ box(.76,.3,.01,solid('#b8bec4'),0,.18+k*.32,.305,g); box(.16,.025,.03,X.steel,0,.26+k*.32,.32,g); }
-    box(.5,.22,.42,X.white,0,1.41,0,g); box(.36,.02,.2,solid('#2a2d31'),0,1.53,.05,g); collide(g);
-    const wc=new THREE.Group(); wc.position.set(12.55,0,OZ0+.35); scene.add(wc);
-    box(.34,1.0,.34,X.white,0,.5,0,wc); const bt=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.36,20),new THREE.MeshStandardMaterial({color:0x9fd0f0,transparent:true,opacity:.55,roughness:.1})); bt.position.y=1.18; wc.add(bt);
-    box(.06,.04,.04,solid('#3b82d6'),-.07,.82,.18,wc); box(.06,.04,.04,solid('#d63b3b'),.07,.82,.18,wc); collide(wc);
-    sign(1.7,1.0,680,400,(c,w,h)=>{ c.fillStyle='#fbfcfd'; c.fillRect(0,0,w,h); c.strokeStyle='#b9bfc5'; c.lineWidth=14; c.strokeRect(0,0,w,h);
-      c.fillStyle='#1f5fbf'; c.font='700 40px "Noto Sans KR", sans-serif'; c.fillText('이번 주 할 일',36,70);
-      c.font='400 30px "Noto Sans KR", sans-serif'; [['#2a2d31','□ 새 책 등록 — 원고실 PC'],['#2a2d31','□ CCTV 화면 점검'],['#c0392b','■ 토 11시 동화 구연'],['#2a2d31','□ 수유실 물티슈 채우기'],['#2a2d31','□ 사다리 바퀴 기름칠']].forEach(([col,t],i)=>{ c.fillStyle=col; c.fillText(t,40,128+i*52); });
-      c.strokeStyle='#e8903a'; c.lineWidth=5; c.beginPath(); c.arc(570,300,46,0,7); c.stroke(); c.fillStyle='#e8903a'; c.font='700 26px "Noto Sans KR", sans-serif'; c.fillText('화이팅!',520,390); },scene,OX0+.012,1.55,22.6,Math.PI/2,0,false);
-    plant(6.75,23.45,.8);
-    bookTruck(7.7,19.85,0, BOOKS.slice(30,39), '사무실 북트럭 · 등록 대기');
-  }
+  sign(1.7,1.0,680,400,(c,w,h)=>{ c.fillStyle='#fbfcfd'; c.fillRect(0,0,w,h); c.strokeStyle='#b9bfc5'; c.lineWidth=14; c.strokeRect(0,0,w,h);
+    c.fillStyle='#1f5fbf'; c.font='700 40px "Noto Sans KR", sans-serif'; c.fillText('관제 근무 수칙',36,70);
+    c.font='400 30px "Noto Sans KR", sans-serif'; ['□ 1·2·3층 CCTV 30분마다 점검','□ 4층 중문은 꼭 닫기','■ 비밀번호는 관계자만','□ 새 책 등록 — 원고실 PC','□ 엘리베이터 관리자 키 보관'].forEach((t,i)=>{ c.fillStyle=i===2?'#c0392b':'#2a2d31'; c.fillText(t,36,130+i*52); }); },scene,7.31,R4+1.55,21.6,Math.PI/2,0,false);
+  { const wc=new THREE.Group(); wc.position.set(12.2,R4,22.9); scene.add(wc); box(.34,1.0,.34,X.white,0,.5,0,wc); const bt=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.36,20),new THREE.MeshStandardMaterial({color:0x9fd0f0,transparent:true,opacity:.55,roughness:.1})); bt.position.y=1.18; wc.add(bt); collide(wc); }
+  plant(2.2,8.8,.8,R4);
   // wall clock showing the real time
   const clockHands=[];
-  { const g=new THREE.Group(); g.position.set(7.5,2.5,RL-.03); g.rotation.y=Math.PI; scene.add(g);
+  { const g=new THREE.Group(); g.position.set(4.4,R4+2.45,15.92); g.rotation.y=Math.PI; scene.add(g);
     const ft=ctex(256,256,(c,w,h)=>{ c.fillStyle='#fff'; c.beginPath(); c.arc(128,128,124,0,7); c.fill(); c.fillStyle='#2a2d31'; c.font='700 28px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.textBaseline='middle';
       for(let k=1;k<=12;k++){ const a=k/12*Math.PI*2; c.fillText(String(k),128+Math.sin(a)*96,128-Math.cos(a)*96); } for(let k=0;k<60;k++){ const a=k/60*Math.PI*2; c.fillRect(128+Math.sin(a)*114-1,128-Math.cos(a)*114-1,2,2); } });
-    const face=new THREE.Mesh(new THREE.CircleGeometry(.2,40),new THREE.MeshStandardMaterial({map:ft,roughness:.5})); g.add(face);
-    const rim=new THREE.Mesh(new THREE.TorusGeometry(.205,.014,10,48),solid('#e8903a')); g.add(rim);
+    g.add(new THREE.Mesh(new THREE.CircleGeometry(.2,40),new THREE.MeshStandardMaterial({map:ft,roughness:.5})));
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(.205,.014,10,48),solid('#e8903a')));
     for(const [len,wd,col,z] of [[.11,.014,'#2a2d31',.006],[.16,.009,'#2a2d31',.009],[.17,.004,'#d63b3b',.012]]){ const geo=new THREE.BoxGeometry(wd,len,.004); geo.translate(0,len/2-.02,0); const m=new THREE.Mesh(geo,solid(col)); m.position.z=z; g.add(m); clockHands.push(m); }
   }
+  for(const [x,z] of [[5,11.5],[10,19.5],[4,20]]){ const L=new THREE.PointLight(0xfff4e6,.5,12,1.5); L.position.set(x,RC-.4,z); scene.add(L); }
+  for(const [x,z] of [[3.5,12],[6.5,12],[9.5,12],[3.5,14.5],[9.5,15],[9.5,22],[11.5,21],[2.7,18.5],[5,18.5]]){ const d=new THREE.Mesh(new THREE.CircleGeometry(.085,20),M.led); d.rotation.x=Math.PI/2; d.position.set(x,RC-.004,z); scene.add(d); }
 
   /* nursing room: soft mat, two nursing chairs behind a curtain, changing table, sink, crib */
   const NX0=-RW, NX1=-LOBBY_X-.1;
@@ -1537,14 +1560,31 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const rt=new THREE.WebGLRenderTarget(400,250,{type:THREE.HalfFloatType});   // linear HDR; tone-mapped once when shown on a screen
     cctvCams.push({name,cam,rt});
   }
-  cctvCam('CAM 1 · 로비',new THREE.Vector3(-5.45,3.02,18.5),new THREE.Vector3(1.5,.5,23.2),RH);
-  cctvCam('CAM 2 · 어린이자료실 입구',new THREE.Vector3(12.25,3.02,17.2),new THREE.Vector3(-2,.3,8.5),RH);
-  cctvCam('CAM 3 · 어린이 열람 공간',new THREE.Vector3(-12.35,3.02,-12.7),new THREE.Vector3(-.5,.1,-20.5),RH);
-  cctvCam('CAM 4 · 건물 앞',new THREE.Vector3(4.4,3.55,RL+1.36),new THREE.Vector3(-1,.5,RL+9.5),3.75);
+  { const y1=3.02, y2=F1+3.02, y3=F2+3.02, t1=RH, t2=F1+RH, t3=F2+RH, V=(x,y,z)=>new THREE.Vector3(x,y,z);
+    cctvCam('CAM 1 · 1층 로비',V(-5.45,y1,18.5),V(1.5,.5,23.2),t1);
+    cctvCam('CAM 2 · 1층 로비 휴게 공간',V(12.6,y1,18.6),V(7,.4,23.5),t1);
+    cctvCam('CAM 3 · 1층 어린이자료실 입구',V(12.25,y1,17.2),V(-2,.3,8.5),t1);
+    cctvCam('CAM 4 · 1층 서가 왼쪽',V(-12.35,y1,16.8),V(2,.3,2),t1);
+    cctvCam('CAM 5 · 1층 서가 오른쪽',V(12.35,y1,-6),V(-4,.3,-1),t1);
+    cctvCam('CAM 6 · 1층 어린이 열람 공간',V(-12.35,y1,-12.7),V(-.5,.1,-20.5),t1);
+    cctvCam('CAM 7 · 1층 DVD 영상 코너',V(-3.5,y1,-23.6),V(-9,.3,-18),t1);
+    cctvCam('CAM 8 · 건물 앞',V(4.4,3.55,RL+1.36),V(-1,.5,RL+9.5),3.75);
+    cctvCam('CAM 9 · 2층 엘리베이터 홀',V(-12.4,y2,23.6),V(4,F1+.4,19.5),t2);
+    cctvCam('CAM 10 · 2층 자료실 입구',V(12.4,y2,17.6),V(-4,F1+.3,10),t2);
+    cctvCam('CAM 11 · 2층 서가 앞쪽',V(-12.4,y2,14.5),V(4,F1+.3,4),t2);
+    cctvCam('CAM 12 · 2층 창가 PC석',V(-11.6,y2,-14.5),V(-10.5,F1+.5,2),t2);
+    cctvCam('CAM 13 · 2층 서가 뒤쪽',V(12.4,y2,-17.6),V(-3,F1+.3,-8),t2);
+    cctvCam('CAM 14 · 2층 열람 테이블',V(-12.4,y2,-23.6),V(2,F1+.3,-19.5),t2);
+    cctvCam('CAM 15 · 3층 복도',V(-1.7,y3,23.6),V(2,F2+.3,0),t3);
+    cctvCam('CAM 16 · 3층 복도 끝',V(5.6,y3,-23.6),V(1,F2+.3,0),t3);
+    cctvCam('CAM 17 · 3층 열람실',V(-2.4,y3,-19.6),V(-10,F2+.3,0),t3);
+    cctvCam('CAM 18 · 3층 대강당',V(-2.4,y3,23.6),V(-8,F2+.4,11),t3);
+    cctvCam('CAM 19 · 3층 문화나눔공간',V(6.4,y3,-2.4),V(11,F2+.3,-18),t3);
+    cctvCam('CAM 20 · 4층 옥상 전실',V(2.0,R4+3.02,16.4),V(5,R4+.3,21),RC);
+  }
   cctvCams.forEach((c,i)=>{
-    const x=9.4+(i%2)*.8, y=1.86-Math.floor(i/2)*.5;
-    box(.8,.5,.04,M.black,x,y,OZ0+.03);
-    const s=new THREE.Mesh(new THREE.PlaneGeometry(.74,.44),new THREE.MeshBasicMaterial({map:c.rt.texture})); s.position.set(x,y,OZ0+.052); cctvScreens.add(s);
+    const x=4.95+(i%5)*1.05, y=R4+2.78-Math.floor(i/5)*.66;
+    const s=new THREE.Mesh(new THREE.PlaneGeometry(1.0,.62),new THREE.MeshBasicMaterial({map:c.rt.texture})); s.position.set(x,y,RZ0+.06); cctvScreens.add(s);
     act(s,()=>[c.name,'실시간 화면 · 클릭하면 크게 보기'],()=>openCctv(i));
   });
   /* ---------- blocky toy-figure avatars: yours (seen only by the CCTV, layer 1) and other visitors ---------- */
@@ -1821,17 +1861,17 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!title || !body){ $('wrInfo').textContent='제목과 본문을 모두 써 주세요.'; (title?$('wrBody'):$('wrTitle')).focus(); return; }
     const d=new Date();
     const o={genre:$('wrGenre').value, title, author:$('wrAuthor').value.replace(/[<>&]/g,'').trim()||'이름 없는 작가', color:wrColor, body,
-      note:`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일, 관평도서관 사무실에서 썼어요.`};
+      note:`${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일, 관평도서관 종합관리실에서 썼어요.`};
     const b=makeMyBook(o); myBooks.push(b); saveMyBooks();
     closeSearch(false); $('wrTitle').value=''; $('wrBody').value='';
-    placeMyBook(b).then(()=>{ toast(`「${b.title}」${batchim(b.title)?'이':'가'} 사무실 '새 책' 서가에 꽂혔어요.`); openBook(b); });
+    placeMyBook(b).then(()=>{ toast(`「${b.title}」${batchim(b.title)?'이':'가'} 종합관리실 '새 책' 서가에 꽂혔어요.`); openBook(b); });
   }
   async function placeMyBook(b){
     try{ await Promise.race([Promise.all([document.fonts.load('800 40px "Nanum Myeongjo"',b.title+b.author), document.fonts.load('700 20px "Noto Sans KR"',b.title+b.author)]), new Promise(r=>setTimeout(r,1500))]); }catch(e){}
     const k=myShelf.userData.used||0; if(k>=mySlots.length) return;
     myShelf.userData.used=k+1;
     const [x,y]=mySlots[k];
-    addReadable(b,myShelf,x,y,.17,1,.24+((k*37)%6)*.01,'사무실 · 새 책 서가');
+    addReadable(b,myShelf,x,y,.17,1,.24+((k*37)%6)*.01,'4층 종합관리실 · 새 책 서가');
     const m=readable[readable.length-1];
     if(index) index.push({kind:'f',mesh:m,book:b,title:b.title,author:b.author,genre:b.genre,color:b.color,loc:m.userData.loc,tag:'직접 쓴 책'});
   }
@@ -2659,7 +2699,6 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
      2F GENERAL READING ROOM (종합자료실) + the elevator that reaches it
      ============================================================ */
   const FL=F1, C2=F1+RH;                    // second-floor level and its ceiling
-  const SHAFT={x0:3.6,x1:5.95,z0:21.9,z1:RL, dx0:4.35,dx1:5.45};   // elevator shaft in the lobby's front-right corner
   const tileTex2=ctex(256,256,(g,w,h)=>{ g.fillStyle='#eef0ef'; g.fillRect(0,0,w,h);
     for(let i=0;i<2;i++) for(let j=0;j<2;j++){ g.fillStyle=`rgba(${rand()<.5?'255,255,255':'205,210,210'},${rr(.15,.35)})`; g.fillRect(i*128+2,j*128+2,124,124); }
     speck(g,w,h,1800,['rgba(160,165,168,.35)','rgba(255,255,255,.6)']); g.fillStyle='rgba(150,155,158,.55)'; for(let k=0;k<=w;k+=128){ g.fillRect(k-1,0,2,h); g.fillRect(0,k-1,w,2); } });
@@ -2846,7 +2885,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   // the second-floor hall in front of the reading room
   { const z=(LOBBY_Z+RL)/2;
     sign(1.4,1.9,560,760,(c,w,h)=>{ c.fillStyle='#f7f5f0'; c.fillRect(0,0,w,h); c.fillStyle='#2b6cb0'; c.fillRect(0,0,w,120); c.fillStyle='#fff'; c.font='900 56px "Noto Sans KR", sans-serif'; c.fillText('층별 안내',36,82);
-      [['3F','열람실 · 대강당 · 문화나눔공간'],['2F','종합자료실 · 열람 테이블'],['1F','어린이자료실 · 사무실 · 수유실']].forEach(([f,t],i)=>{ const y=200+i*180; c.fillStyle=f==='2F'?'#f2c230':'#dfe6ef'; c.fillRect(30,y-60,w-60,140); c.fillStyle='#1d2b3a'; c.font='900 64px sans-serif'; c.fillText(f,54,y+30); c.font='700 30px "Noto Sans KR", sans-serif'; c.fillText(t,170,y+22); });
+      [['3F','열람실 · 대강당 · 문화나눔공간'],['2F','종합자료실 · 열람 테이블'],['1F','어린이자료실 · 로비 · 수유실']].forEach(([f,t],i)=>{ const y=200+i*180; c.fillStyle=f==='2F'?'#f2c230':'#dfe6ef'; c.fillRect(30,y-60,w-60,140); c.fillStyle='#1d2b3a'; c.font='900 64px sans-serif'; c.fillText(f,54,y+30); c.font='700 30px "Noto Sans KR", sans-serif'; c.fillText(t,170,y+22); });
       c.fillStyle='#8a929c'; c.font='400 24px "Noto Sans KR", sans-serif'; c.fillText('지금 계신 곳: 2층',36,h-40); },scene,-RW+.02,FL+1.5,21.0,Math.PI/2,.05);
     const g=new THREE.Group(); g.position.set(-4.5,FL,RL-.45); scene.add(g);
     box(2.4,.4,.5,M.oak,0,.2,0,g); box(2.4,.08,.52,brightBlue,0,.44,0,g); box(2.4,.4,.06,brightBlue,0,.68,.22,g); collide(g);
@@ -2867,7 +2906,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
      ============================================================ */
   const F3=F2, C3=F2+RH;
   for(const [a,b,c,d] of fl2){ slab(a,b,F3-.3,F3,c,d,[X.white,X.white,floor2,X.ceiling,X.white,X.white],1.2); collideBox(a,b,F3-.3,F3,c,d); }
-  slab(-RW,RW,C3,C3+.12,-RL,RL,X.ceiling);
+  for(const [a,b,c,d] of fl2) slab(a,b,C3,C3+.12,c,d,X.ceiling);
   { const spots=[]; for(let x=-11.2;x<=11.21;x+=2.8) for(let z=-22.4;z<=23;z+=2.4){ if(x>3.4&&x<6.2&&z>21.6) continue; spots.push([x,C3-.004,z]); }
     const dm=new THREE.InstancedMesh(new THREE.CircleGeometry(.085,20),M.led,spots.length), rm=new THREE.InstancedMesh(new THREE.RingGeometry(.085,.12,24),X.steel,spots.length);
     const mm=new THREE.Matrix4(), q=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)), s=new THREE.Vector3(1,1,1);
@@ -3022,8 +3061,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   for(const [x,z,k] of [[-7.5,-6,.5],[-7.5,16,.5],[9.5,-13,.5],[2,6,.45]]){ const L=new THREE.PointLight(0xfff4e6,k,14,1.5); L.position.set(x,C3-.4,z); scene.add(L); }
 
   /* --- the elevator: a car that really travels up the shaft with you in it (1F, 2F, 3F) --- */
-  const ELEV_Y=[0,FL,F2], NF=ELEV_Y.length, TOPC=F2+RH;
-  const floorOf=y=>y>F2-1.2?2:y>FL-1.2?1:0;
+  const ELEV_Y=[0,FL,F2,R4], NF=ELEV_Y.length, TOPC=RC;
+  const floorOf=y=>y>R4-1.2?3:y>F2-1.2?2:y>FL-1.2?1:0;
   const elev={y:0,floor:0,pending:null,moving:false,door:0,doorT:0,openT:0,riding:false,v:0};
   const carFloorCol={x0:SHAFT.x0+.12,x1:SHAFT.x1-.08,y0:-.1,y1:0,z0:SHAFT.z0+.12,z1:SHAFT.z1-.04};
   colliders.push(carFloorCol);
@@ -3032,12 +3071,12 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const indTex=f=>ctex(160,64,(c,w,h)=>{ c.fillStyle='#111'; c.fillRect(0,0,w,h); c.fillStyle='#ff6a2a'; c.font='900 46px monospace'; c.textAlign='center'; c.fillText(String(f+1),w/2,48); c.font='700 28px monospace'; if(elev.moving) c.fillText(elev.pending>elev.floor?'▲':'▼',w-26,44); });
   // shaft: closed from the lobby floor to the top ceiling so the car never shows the void between floors
   slab(SHAFT.x0,SHAFT.x0+.12,0,TOPC,SHAFT.z0,SHAFT.z1,[X.paint,X.paint,X.paint,X.paint,X.paint,X.paint]);
-  slab(SHAFT.x1-.05,SHAFT.x1+.05,RH,TOPC,SHAFT.z0,SHAFT.z1,X.white);
+  slab(SHAFT.x1-.05,SHAFT.x1+.05,0,TOPC,SHAFT.z0,SHAFT.z1,X.white);
   for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]) slab(a,b,0,TOPC,SHAFT.z0,SHAFT.z0+.1,brushed);
   ELEV_Y.forEach((y,f)=>slab(SHAFT.dx0,SHAFT.dx1,y+2.15,f<NF-1?ELEV_Y[f+1]:TOPC,SHAFT.z0,SHAFT.z0+.1,brushed));
   ELEV_Y.forEach((y0,f)=>{
     collideBox(SHAFT.x0,SHAFT.x0+.12,y0,y0+RH,SHAFT.z0,SHAFT.z1);
-    if(f) collideBox(SHAFT.x1-.05,SHAFT.x1+.05,y0,y0+RH,SHAFT.z0,SHAFT.z1);
+    collideBox(SHAFT.x1-.05,SHAFT.x1+.05,y0,y0+RH,SHAFT.z0,SHAFT.z1);
     for(const [a,b] of [[SHAFT.x0,SHAFT.dx0],[SHAFT.dx1,SHAFT.x1]]) collideBox(a,b,y0,y0+RH,SHAFT.z0,SHAFT.z0+.1);
     colliders.push({x0:SHAFT.dx0,x1:SHAFT.dx1,y0,y1:y0+2.15,z0:SHAFT.z0-.02,z1:SHAFT.z0+.16,door:hallDoors[f]});
     for(const sd of [-1,1]){ const l=box(.56,2.32,.03,brushed,0,y0+1.06,SHAFT.z0+.13); l.userData.sd=sd; hallLeaves[f].push(l); }
@@ -3048,7 +3087,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     act(btn,()=>['엘리베이터 호출 버튼', elev.floor===f&&!elev.moving?'클릭하거나 E로 문 열기':'클릭하거나 E로 엘리베이터 부르기'],()=>elevGo(f));
     sign(.36,.12,180,60,(c,w,h)=>{ c.fillStyle='#2b6cb0'; c.fillRect(0,0,w,h); c.fillStyle='#fff'; c.font='700 30px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('엘리베이터',w/2,42); },scene,SHAFT.x0-.005,y0+2.3,SHAFT.z0+.5,-Math.PI/2,.1);
   });
-  const car=new THREE.Group(); scene.add(car);
+  const car=new THREE.Group(); scene.add(car); let adminBtn=null;
   { const x0=SHAFT.x0+.15, x1=SHAFT.x1-.1, z0=SHAFT.z0+.17, z1=SHAFT.z1-.06, cx=(x0+x1)/2, cz=(z0+z1)/2, w=x1-x0, d=z1-z0;
     box(w,.08,d,solid('#3a3b3e'),cx,-.028,cz,car);
     box(.03,2.4,d,brushed,x0+.015,1.2,cz,car); box(.03,2.4,d,brushed,x1-.015,1.2,cz,car); box(w,2.4,.03,brushed,cx,1.2,z1-.015,car);
@@ -3056,14 +3095,15 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     box(w-.1,.04,.04,X.steel,cx,.95,z1-.06,car); box(.04,.04,d-.2,X.steel,x0+.06,.95,cz,car);
     box(w*.6,1.2,.01,new THREE.MeshStandardMaterial({color:0xdfe6ea,roughness:.05,metalness:1}),cx,1.45,z1-.035,car);
     const panel=new THREE.Group(); panel.position.set(x1-.035,1.15,z0+.35); panel.rotation.y=-Math.PI/2; car.add(panel);
-    box(.18,.5,.012,X.steel,0,0,0,panel);
-    for(let f=0;f<NF;f++){ const b=sign(.08,.08,64,64,(c,w,h)=>{ c.fillStyle='#222'; c.beginPath(); c.arc(32,32,30,0,7); c.fill(); c.fillStyle='#ffd27a'; c.font='900 36px sans-serif'; c.textAlign='center'; c.fillText(String(f+1),32,45); },panel,0,-.14+f*.13,.008,0,.3,false);
-      act(b,()=>[`${f+1}층 버튼`,'클릭하거나 숫자 키로 이동'],()=>elevGo(f)); }
+    box(.18,.62,.012,X.steel,0,0,0,panel);
+    for(let f=0;f<NF;f++){ const adm=f===NF-1; const b=sign(.08,.08,64,64,(c,w,h)=>{ c.fillStyle=adm?'#7a1010':'#222'; c.beginPath(); c.arc(32,32,30,0,7); c.fill(); c.fillStyle=adm?'#ffdede':'#ffd27a'; c.font='900 36px sans-serif'; c.textAlign='center'; c.fillText(String(f+1),32,45); },panel,0,-.2+f*.13,.008,0,.3,false);
+      if(adm) adminBtn=b;
+      act(b,()=>[adm?'4층 버튼 · 관리자 전용':`${f+1}층 버튼`,'클릭하거나 숫자 키로 이동'],()=>{ if(!adm || hasPasskey()) elevGo(f); }); }
     sign(.3,.1,160,52,(c,w,h)=>{ c.fillStyle='#111'; c.fillRect(0,0,w,h); c.fillStyle='#7cf'; c.font='700 26px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('관평 승강기',w/2,36); },car,cx,2.2,z1-.04,Math.PI,.4,false);
   }
   const inCar=()=>player.x>SHAFT.x0+.1 && player.x<SHAFT.x1-.05 && player.z>SHAFT.z0+.14 && player.z<SHAFT.z1 && Math.abs(player.y-elev.y)<.6;
   const nearHall=()=>Math.hypot(player.x-(SHAFT.dx0+SHAFT.dx1)/2,player.z-(SHAFT.z0-.4))<1.6 ? floorOf(player.y) : -1;
-  const ARRIVE=['1층입니다. 로비와 어린이자료실이에요.','2층입니다. 앞으로 나가면 종합자료실이에요.','3층입니다. 열람실 · 대강당 · 문화나눔공간이 있어요.'];
+  const ARRIVE=['1층입니다. 로비와 어린이자료실이에요.','2층입니다. 앞으로 나가면 종합자료실이에요.','3층입니다. 열람실 · 대강당 · 문화나눔공간이 있어요.','4층 옥상입니다. 종합관리실은 관계자 외 출입금지예요.'];
   function elevGo(f){
     if(elev.moving || elev.pending!==null || f<0 || f>=NF) return;
     if(f===elev.floor){ elev.doorT=1; elev.openT=0; tone([988],.08,'sine',.03); return; }
@@ -3088,6 +3128,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
         if(elev.riding) toast(ARRIVE[elev.floor]);
         elev.riding=false; }
     }
+    if(adminBtn) adminBtn.visible=hasPasskey();
     car.position.y=elev.y; carFloorCol.y0=elev.y-.1; carFloorCol.y1=elev.y+.012;
     hallDoors.forEach((h,f)=>{ h.amt = (!elev.moving && elev.floor===f) ? elev.door : 0;
       hallLeaves[f].forEach(l=>l.position.x=(SHAFT.dx0+SHAFT.dx1)/2 + l.userData.sd*(.275+h.amt*(l.userData.sd>0?.46:.56))); });
@@ -3097,8 +3138,9 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     door2.amt+=((near2?1:0)-door2.amt)*Math.min(1,dt*4);
     door2Leaves.forEach(l=>l.position.set(l.userData.sd*(.6+door2.amt*1.15),FL,LOBBY_Z));
   }
-  hooks.elev=()=>{ if(inCar()){ elevGo((elev.floor+1)%NF); return true; } const f=nearHall(); if(f>=0){ elevGo(f); return true; } return false; };
-  hooks.elevPick=n=>{ if(inCar() && !elev.moving){ elevGo(n); return true; } return false; };
+  const nextStop=f=>{ let n=(f+1)%NF; if(n===NF-1 && !hasPasskey()) n=0; return n; };
+  hooks.elev=()=>{ if(inCar()){ elevGo(nextStop(elev.floor)); return true; } const f=nearHall(); if(f>=0){ elevGo(f); return true; } return false; };
+  hooks.elevPick=n=>{ if(n===NF-1 && !hasPasskey()) return false; if(inCar() && !elev.moving){ elevGo(n); return true; } return false; };
   for(const [x,z,k] of [[-7,8,.5],[6,8,.5],[-3,-6,.5],[6,-14,.5],[-4,-20,.5],[0,21,.42]]){ const L=new THREE.PointLight(0xfff4e6,k,13,1.5); L.position.set(x,C2-.4,z); scene.add(L); }
 
   /* ---------- lights ---------- */
@@ -3216,7 +3258,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     let best = fh && fh.distance<limit ? {type:'f',mesh:fh.object,dist:fh.distance} : null;
     const kh = ray.intersectObjects(kiosks,false)[0];
     if(kh && kh.distance<limit && (!best || kh.distance<best.dist)) best = {type:'k',dist:kh.distance};
-    const ah = ray.intersectObjects(actionMeshes,false)[0];
+    const shown=o=>{ for(;o;o=o.parent) if(!o.visible) return false; return true; };
+    const ah = ray.intersectObjects(actionMeshes,false).find(h=>shown(h.object));
     if(ah && ah.distance<limit && (!best || ah.distance<best.dist)) best = {type:'a',obj:ah.object,dist:ah.distance};
     const ch = ray.intersectObjects(seatMeshes,false)[0];
     if(ch && ch.distance<limit && (!best || ch.distance<best.dist)){
@@ -3542,7 +3585,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     jumpQueued=false;
     player.vy -= GRAV*dt;
     let ny = player.y + player.vy*dt;
-    const roof = player.z>RL+FACADE_T ? 99 : player.y>F2-1.2 ? C3-.12 : player.y>FL-1.2 ? C2-.12 : RH-.12;
+    const roof = player.z>RL+FACADE_T ? 99 : player.y>R4-1.2 ? RC-.12 : player.y>F2-1.2 ? C3-.12 : player.y>FL-1.2 ? C2-.12 : RH-.12;
     if(player.vy>0 && ny+HEAD>roof){ ny=roof-HEAD; player.vy=0; }
     const gnd = groundAt(player.x,player.z,Math.max(player.y,ny));
     if(ny<=gnd){ if(!player.ground && player.vy<-4) player.land=.12; ny=gnd; player.vy=0; player.ground=true; }
@@ -3576,7 +3619,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       if(d.target){ const far=!anyoneNear(d.x,d.zc,2.4); d.openT = far ? d.openT+dt : 0; if(d.openT>4) d.target=0; }
     }
     const free = started && !auto && !reading && !searchOpen;
-    const ev = free ? (inCar() ? (elev.moving?'':'층 고르기 · 숫자 키 1·2·3 (E: 다음 층)') : nearHall()>=0 ? (elev.floor===nearHall()&&!elev.moving?'엘리베이터 문 열기':'엘리베이터 부르기') : '') : '';
+    const ev = free ? (inCar() ? (elev.moving?'':`층 고르기 · 숫자 키 ${hasPasskey()?'1·2·3·4':'1·2·3'} (E: 다음 층)`) : nearHall()>=0 ? (elev.floor===nearHall()&&!elev.moving?'엘리베이터 문 열기':'엘리베이터 부르기') : '') : '';
     const rd = free ? nearRoomDoor() : null;
     const ptxt = ev ? ev : rd ? (rd.target ? '문 닫기' : rd.locked && !inRoom(rd) ? '도어록 비밀번호 누르기' : '문 열기') : '문 열기';
     if(promptEl.dataset.t!==ptxt){ promptEl.dataset.t=ptxt; promptEl.innerHTML=`<kbd>E</kbd> ${ptxt}`; }
@@ -3589,7 +3632,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(zoneT>.3){
       zoneT=0;
       let txt='';
-      if(started){ const fl=floorOf(player.y), zn=zones.find(zz=>(zz.fl||0)===fl && player.x>zz.x0&&player.x<zz.x1&&player.z>zz.z0&&player.z<zz.z1); txt = zn ? zn.label : fl ? `${fl+1}층` : (player.z>LOBBY_Z ? (player.x>LOBBY_X ? '사무실' : player.x<-LOBBY_X ? '수유실' : '로비') : player.z>13.6 ? '어린이자료실 입구' : ''); }
+      if(started){ const fl=floorOf(player.y), zn=zones.find(zz=>(zz.fl||0)===fl && player.x>zz.x0&&player.x<zz.x1&&player.z>zz.z0&&player.z<zz.z1); txt = zn ? zn.label : fl===3 ? '옥상' : fl ? `${fl+1}층` : (player.z>LOBBY_Z ? (player.x>LOBBY_X ? '로비 휴게 공간' : player.x<-LOBBY_X ? '수유실' : '로비') : player.z>13.6 ? '어린이자료실 입구' : ''); }
       if(started && player.z>RL) txt='관평도서관 앞';
       const nl = started && (player.ladder || player.y<1 && ladders.find(L=>Math.abs(player.z-L.z)<1.2 && Math.abs(player.x-L.bottomX)<1.6));
       if(player.seat) txt = `${player.seat.name}에 앉아 있어요 · WASD로 일어나기${carried?' · R 읽기':''}`;
@@ -3604,7 +3647,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     // live CCTV: one feed per frame while the reader is in the office or watching full screen
     ledMat.color.setHex((t%1.4)<.7?0xff2a2a:0x400808);
     if(ccBoot<cctvCams.length) renderFeed(cctvCams[ccBoot++]);
-    else if(cctvMode || (player.y<2 && player.x>LOBBY_X && player.z>LOBBY_Z)){ ccIdx=(ccIdx+1)%cctvCams.length; renderFeed(cctvCams[ccIdx]); }
+    else if(cctvMode || player.y>R4-1.2){ ccIdx=(ccIdx+1)%cctvCams.length; renderFeed(cctvCams[ccIdx]); }
     if(cctvMode){
       ccTimeT+=dt; if(ccTimeT>.5){ ccTimeT=0; $('ccTime').textContent=new Date().toLocaleString('ko-KR',{hour12:false}); }
       const cc=cctvCams[ccView].cam; cc.aspect=innerWidth/innerHeight; cc.updateProjectionMatrix(); renderer.render(scene,cc);
