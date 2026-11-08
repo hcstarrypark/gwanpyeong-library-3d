@@ -827,8 +827,14 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     block(BX0,BX1,BZ0,BZ0+26,3,brick);                          // red-brick hall, almost on the fence
     // the main entrance on the east face, with a canopy and columns; the name over the short end that faces the library
     slab(MX0-3.2,MX0,ST,ST+.45,Z0+18,Z0+26,X.white); for(const z of [Z0+18.6,Z0+25.4]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,ST,16),X.white); c.position.set(MX0-2.8,ST/2,z); scene.add(c); }
-    sign(13,1.7,1664,218,(g,w,h)=>{ g.fillStyle='#2b6cb0'; g.fillRect(0,0,w,h); g.fillStyle='#fff'; g.beginPath(); g.arc(120,109,70,0,7); g.fill(); g.fillStyle='#2b6cb0'; g.beginPath(); g.arc(120,109,56,0,7); g.fill(); g.fillStyle='#fff'; g.font='900 60px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('관평',120,112);
-      g.textAlign='left'; g.font='900 128px "Noto Sans KR", sans-serif'; g.fillText('대전관평초등학교',240,112); },scene,(MX0+MX1)/2,mh-1.5,Z0-.04,Math.PI,.15,false);
+    // the school emblem (교표) from the school's site; the signs draw a plain ring until it has loaded, then redraw with it
+    const emblem=new Image(); emblem.src='media/school-emblem.gif';
+    const drawEmblem=(g,cx,cy,r)=>{ g.fillStyle='#fff'; g.beginPath(); g.arc(cx,cy,r,0,7); g.fill();
+      if(emblem.complete && emblem.naturalWidth){ g.save(); g.beginPath(); g.arc(cx,cy,r-4,0,7); g.clip(); g.drawImage(emblem,cx-r+4,cy-r+4,2*r-8,2*r-8); g.restore(); }
+      else { g.fillStyle='#1d4f8f'; g.beginPath(); g.arc(cx,cy,r-12,0,7); g.fill(); } };
+    const drawName=(g,w,h)=>{ g.fillStyle='#2b6cb0'; g.fillRect(0,0,w,h); drawEmblem(g,120,109,84);
+      g.fillStyle='#fff'; g.textAlign='left'; g.textBaseline='middle'; g.font='900 128px "Noto Sans KR", sans-serif'; g.fillText('대전관평초등학교',240,112); };
+    const nameSign=sign(13,1.7,1664,218,drawName,scene,(MX0+MX1)/2,mh-1.5,Z0-.04,Math.PI,.15,false);
     // the footbridge between the two buildings: a glazed box on the second floor with a white frame
     { const y0=ST*1+.2, y1=ST*2-.2, bz0=Z0+4, bz1=Z0+8;
       slab(BX1,MX0,y0,y0+.35,bz0,bz1,X.white); slab(BX1,MX0,y1-.35,y1,bz0,bz1,X.white); slab(BX1-.1,MX0+.1,y1,y1+.3,bz0-.2,bz1+.2,roofM);
@@ -839,7 +845,17 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(const [x0,x1] of [[-33,-4.6],[4.6,33]]){ slab(x0,x1,0,.6,WALL-.15,WALL+.15,X.granite,1.2); box(x1-x0,.9,.7,new THREE.MeshStandardMaterial({color:lin(0x4d7a3c),roughness:1}),(x0+x1)/2,1.05,WALL+.55); }
     for(const x of [-4.6,4.6]){ slab(x-.55,x+.55,0,2.5,WALL-.55,WALL+.55,X.granite,1.2); slab(x-.65,x+.65,2.5,2.7,WALL-.65,WALL+.65,X.granite,1.2); }
     slab(1.2,4.0,0,1.6,WALL-.03,WALL+.03,X.steel); for(let x=1.2;x<4;x+=.14) slab(x-.012,x+.012,0,1.6,WALL-.03,WALL+.03,X.steel);   // one leaf of the sliding gate, half open
-    sign(8.4,1.0,1344,160,(g,w,h)=>{ g.fillStyle='#fff'; g.fillRect(0,0,w,h); g.fillStyle='#2b6cb0'; g.fillRect(0,0,w,14); g.fillRect(0,h-14,w,14); g.fillStyle='#1b3f6e'; g.font='900 72px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('꿈을 키우는 행복한 학교 · 대전관평초등학교',w/2,84); },scene,0,3.2,WALL-.02,Math.PI,0,true);
+    // the banner over the gate: "꿈·감동·즐거움이 넘치는 행복한 관평배움터" on light blue, with the emblem and a balloon
+    const drawBanner=(g,w,h)=>{ g.fillStyle='#bfe1ec'; g.fillRect(0,0,w,h); g.fillStyle='#a9d3e2'; g.fillRect(0,0,w,10); g.fillRect(0,h-10,w,10);
+      g.textBaseline='middle'; g.textAlign='left'; g.font='900 64px "Noto Sans KR", sans-serif';
+      let x=330; for(const [t,c] of [['꿈','#2f6b3a'],[' · ','#2f6b3a'],['감동','#2f6b3a'],[' · ','#2f6b3a'],['즐거움','#5aa83c'],['이 넘치는','#2f6b3a']]){ g.fillStyle=c; g.fillText(t,x,70); x+=g.measureText(t).width; }
+      g.fillStyle='#2f6fd6'; g.font='900 96px "Noto Sans KR", sans-serif'; g.fillText('행복한 관평배움터',330,170);
+      drawEmblem(g,150,h/2,100);
+      g.fillStyle='#f0a030'; g.beginPath(); g.ellipse(w-150,92,54,66,0,0,7); g.fill(); g.fillStyle='#e0552f'; g.beginPath(); g.ellipse(w-150,92,54,66,0,-.4,.9); g.fill(); g.fillStyle='#fff'; g.beginPath(); g.ellipse(w-150,92,54,66,0,2.2,3.0); g.fill();
+      g.strokeStyle='#8a5a2a'; g.lineWidth=4; g.beginPath(); g.moveTo(w-150,158); g.quadraticCurveTo(w-170,200,w-140,240); g.stroke(); };
+    const banner=sign(8.4,1.6,1344,256,drawBanner,scene,0,3.4,WALL-.02,Math.PI,0,true);
+    const signTex=[[nameSign.children[0].material.map,drawName],[banner.children[0].material.map,drawBanner]];   // grab the textures now: the meshes get merged into static batches later
+    emblem.onload=()=>{ for(const [t,draw] of signTex){ const c=t.image; draw(c.getContext('2d'),c.width,c.height); t.needsUpdate=true; } };
     { const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:lin(0x5c5e60),roughness:.95,flatShading:true})); rock.position.set(7.2,1.1,WALL+1.6); rock.scale.set(.9,1.4,.6); rock.rotation.y=.4; scene.add(rock);
       slab(6.0,8.4,0,.35,WALL+.9,WALL+2.3,X.granite,1.2); }
     // a few parked cars in the bays
