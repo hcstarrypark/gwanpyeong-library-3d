@@ -207,7 +207,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div><kbd>좌클릭</kbd> 책 펼치기 · <kbd>← →</kbd> 넘기기 · <kbd>Esc</kbd> 덮기</div>
   <div><kbd>우클릭</kbd> 책 들기 · <kbd>R</kbd> 읽기 · <kbd>Q</kbd> 제자리에</div>
   <div>의자·벤치 클릭 앉기 · 사다리 마주 보고 <kbd>W</kbd> · <kbd>E</kbd> 문</div>
-  <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기</div>
+  <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기 · <kbd>V</kbd> 1인칭/3인칭 시점</div>
 </div></div>
 <div id="paused" hidden>화면을 클릭하면 시점이 고정돼요 · 드래그로도 둘러볼 수 있어요</div>
 <div id="touch"><button id="tUse" aria-label="문 열기">E 문</button><button id="tJump" aria-label="점프">점프</button><button id="tFwd" aria-label="앞으로">▲</button><button id="tBack" aria-label="뒤로">▼</button></div>
@@ -364,7 +364,7 @@ addEventListener('resize', ()=>{ if(cur){ const was = single; sizeBook(); if(was
    INPUT STATE
    ============================================================ */
 const keys = new Set();
-let reading = false, locked = false, started = false, jumpQueued = false;
+let reading = false, locked = false, started = false, jumpQueued = false, thirdPerson = false;
 let searchOpen = false, closeSearch = ()=>{}, panelKey = null;
 const hooks = {};
 addEventListener('keydown', e=>{
@@ -381,6 +381,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
   if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
   if(e.code==='KeyM' && hooks.relook && !e.repeat && started) hooks.relook();
+  if(e.code==='KeyV' && hooks.view && !e.repeat && started) hooks.view();
   if(/^Digit[1-4]$/.test(e.code) && hooks.elevPick && !e.repeat && started) hooks.elevPick(+e.code.slice(5)-1);
   if(e.code==='KeyH' && !e.repeat){ const bd=$('lgBody'); bd.hidden=!bd.hidden; $('lgState').textContent=bd.hidden?'보기':'숨기기'; }
   if(e.code==='Space' && !e.repeat) jumpQueued = true;
@@ -845,14 +846,12 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(const [x0,x1] of [[-33,-4.6],[4.6,33]]){ slab(x0,x1,0,.6,WALL-.15,WALL+.15,X.granite,1.2); box(x1-x0,.9,.7,new THREE.MeshStandardMaterial({color:lin(0x4d7a3c),roughness:1}),(x0+x1)/2,1.05,WALL+.55); }
     for(const x of [-4.6,4.6]){ slab(x-.55,x+.55,0,2.5,WALL-.55,WALL+.55,X.granite,1.2); slab(x-.65,x+.65,2.5,2.7,WALL-.65,WALL+.65,X.granite,1.2); }
     slab(1.2,4.0,0,1.6,WALL-.03,WALL+.03,X.steel); for(let x=1.2;x<4;x+=.14) slab(x-.012,x+.012,0,1.6,WALL-.03,WALL+.03,X.steel);   // one leaf of the sliding gate, half open
-    // the banner over the gate: "꿈·감동·즐거움이 넘치는 행복한 관평배움터" on light blue, with the emblem and a balloon
+    // the banner over the gate: "꿈·감동·즐거움이 넘치는 행복한 관평배움터" on light blue, with the emblem
     const drawBanner=(g,w,h)=>{ g.fillStyle='#bfe1ec'; g.fillRect(0,0,w,h); g.fillStyle='#a9d3e2'; g.fillRect(0,0,w,10); g.fillRect(0,h-10,w,10);
       g.textBaseline='middle'; g.textAlign='left'; g.font='900 64px "Noto Sans KR", sans-serif';
       let x=330; for(const [t,c] of [['꿈','#2f6b3a'],[' · ','#2f6b3a'],['감동','#2f6b3a'],[' · ','#2f6b3a'],['즐거움','#5aa83c'],['이 넘치는','#2f6b3a']]){ g.fillStyle=c; g.fillText(t,x,70); x+=g.measureText(t).width; }
       g.fillStyle='#2f6fd6'; g.font='900 96px "Noto Sans KR", sans-serif'; g.fillText('행복한 관평배움터',330,170);
-      drawEmblem(g,150,h/2,100);
-      g.fillStyle='#f0a030'; g.beginPath(); g.ellipse(w-150,92,54,66,0,0,7); g.fill(); g.fillStyle='#e0552f'; g.beginPath(); g.ellipse(w-150,92,54,66,0,-.4,.9); g.fill(); g.fillStyle='#fff'; g.beginPath(); g.ellipse(w-150,92,54,66,0,2.2,3.0); g.fill();
-      g.strokeStyle='#8a5a2a'; g.lineWidth=4; g.beginPath(); g.moveTo(w-150,158); g.quadraticCurveTo(w-170,200,w-140,240); g.stroke(); };
+      drawEmblem(g,150,h/2,100); };
     const banner=sign(8.4,1.6,1344,256,drawBanner,scene,0,3.4,WALL-.02,Math.PI,0,true);
     const signTex=[[nameSign.children[0].material.map,drawName],[banner.children[0].material.map,drawBanner]];   // grab the textures now: the meshes get merged into static batches later
     emblem.onload=()=>{ for(const [t,draw] of signTex){ const c=t.image; draw(c.getContext('2d'),c.width,c.height); t.needsUpdate=true; } };
@@ -1900,6 +1899,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     addEventListener('pagehide',()=>{ for(const c of mpClients) try{ c.publish(MP_TOPIC+'st/'+mp.id,JSON.stringify({id:mp.id,bye:1})); c.end(); }catch(e){} });
   }
   hooks.rename=()=>{ if(!searchOpen && !reading) openIdent(false); };
+  hooks.view=()=>{ if(reading||searchOpen) return; thirdPerson=!thirdPerson; if(thirdPerson) camera.layers.enable(1); else camera.layers.disable(1); toast(thirdPerson?'3인칭 시점 · V 키로 1인칭으로':'1인칭 시점'); };
   hooks.relook=()=>{
     mp.look=randomLook(); mpSave(); mp.force=true;
     scene.remove(myFig.g); myFig=makeFigure(mp.look,1); scene.add(myFig.g);
@@ -3374,7 +3374,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   let shownFloor=-1;
   function showFloor(fl){
     if(fl===shownFloor) return; shownFloor=fl;
-    camera.layers.set(0); camera.layers.enable(2+fl);
+    camera.layers.set(0); camera.layers.enable(2+fl); if(thirdPerson) camera.layers.enable(1);
     for(const S of decorSets) S.im.visible = S.fl===fl;
     lightPool.forEach((L,i)=>{ const sp=lightSpecs[fl][i]; if(sp){ L.position.copy(sp.p); L.intensity=sp.k; L.distance=sp.d; L.decay=sp.dc; L.color.copy(sp.c); } else L.intensity=0; });
   }
@@ -3809,8 +3809,13 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     player.land=Math.max(0,player.land-dt*.6);
     const targetY = player.y+(player.seat?player.seat.eye:EYE) + (player.ground?Math.sin(player.bob*2)*.02*Math.min(1,sp/2.5):0) - player.land*.6;
     player.camY += (targetY-player.camY)*Math.min(1,(player.ground?14:40)*dt);
-    camera.position.set(player.x, player.camY, player.z);
-    camera.rotation.set(player.pitch, player.yaw, Math.sin(player.bob)*.003*Math.min(1,sp/2.5));
+    if(thirdPerson){   // over the shoulder: pull the camera back along the view line, stopping short of walls and furniture
+      const cp=Math.cos(player.pitch), fx=-Math.sin(player.yaw)*cp, fy=Math.sin(player.pitch), fz=-Math.cos(player.yaw)*cp, rx=Math.cos(player.yaw), rz=-Math.sin(player.yaw);
+      const hx=player.x+rx*.4, hy=player.camY+.25, hz=player.z+rz*.4; let d=.5;
+      for(let k=.5;k<=3.2;k+=.15){ const cx=hx-fx*k, cy=hy-fy*k, cz=hz-fz*k; if(cy<.3 || blocked(cx,cz,cy-1.2)) break; d=k; }
+      camera.position.set(hx-fx*d, hy-fy*d, hz-fz*d);
+    } else camera.position.set(player.x, player.camY, player.z);
+    camera.rotation.set(player.pitch, player.yaw, thirdPerson?0:Math.sin(player.bob)*.003*Math.min(1,sp/2.5));
 
     if(!locked){ tipEl.style.left=((mouse.x+1)/2*innerWidth)+'px'; tipEl.style.top=((1-mouse.y)/2*innerHeight+22)+'px'; } else { tipEl.style.left=''; tipEl.style.top=''; }
     hoverT+=dt;
