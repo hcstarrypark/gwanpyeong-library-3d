@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>관평도서관</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +20,7 @@
 }
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--chalk);font-family:var(--ui)}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 #c.hover{cursor:pointer}
 
 #cross{position:fixed;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(255,255,255,.85);pointer-events:none;transition:all .15s;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
@@ -101,9 +102,17 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 .rnav button[disabled]{opacity:.3;cursor:default}
 #pinfo{font-size:12.5px;color:var(--mist);min-width:6em;text-align:center;font-variant-numeric:tabular-nums}
 
-#touch{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;gap:8px;flex-direction:column;z-index:4}
-#touch button{width:58px;height:46px;border-radius:12px;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:16px;font-family:var(--ui)}
-@media (pointer:coarse){#touch{display:flex}#legend{display:none}}
+/* touch controls (phones and tablets): a joystick on the left, round action buttons on the right */
+#touch{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;gap:10px;flex-direction:column;align-items:flex-end;z-index:4}
+#touch .row{display:flex;gap:10px;justify-content:flex-end}
+#touch button{width:58px;height:58px;border-radius:50%;border:0;background:rgba(20,22,26,.55);color:#fff;font:700 12px/1.1 var(--ui);backdrop-filter:blur(6px);touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;padding:0}
+#touch button b{display:block;font-size:18px;line-height:1}
+#touch button.big{width:76px;height:76px;background:rgba(47,111,214,.8);font-size:13px}
+#touch button.big b{font-size:22px}
+#touch button:active{background:rgba(255,255,255,.4)}
+#stick{position:fixed;left:max(22px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:136px;height:136px;border-radius:50%;background:rgba(20,22,26,.35);border:2px solid rgba(255,255,255,.3);display:none;z-index:4;touch-action:none;box-sizing:border-box}
+#knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,255,255,.6);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+@media (pointer:coarse){#touch{display:flex}#stick{display:block}#legend,#paused{display:none}}
 /* search kiosk panel */
 #search{position:fixed;inset:0;z-index:11;display:grid;place-items:center;background:rgba(8,9,11,.72);backdrop-filter:blur(4px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sp{width:min(760px,100%);height:min(640px,86vh);display:flex;flex-direction:column;background:#16181c;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);padding:20px 20px 10px;gap:12px;box-sizing:border-box}
@@ -210,7 +219,12 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기 · <kbd>V</kbd> 1인칭/3인칭 시점</div>
 </div></div>
 <div id="paused" hidden>화면을 클릭하면 시점이 고정돼요 · 드래그로도 둘러볼 수 있어요</div>
-<div id="touch"><button id="tUse" aria-label="문 열기">E 문</button><button id="tJump" aria-label="점프">점프</button><button id="tFwd" aria-label="앞으로">▲</button><button id="tBack" aria-label="뒤로">▼</button></div>
+<div id="stick"><div id="knob"></div></div>
+<div id="touch">
+  <div class="row"><button id="tName" aria-label="이름 바꾸기"><b>N</b>이름</button><button id="tLook" aria-label="아바타 바꾸기"><b>M</b>모습</button><button id="tView" aria-label="시점 바꾸기"><b>V</b>시점</button></div>
+  <div class="row"><button id="tRead" aria-label="읽기"><b>R</b>읽기</button><button id="tDrop" aria-label="제자리에"><b>Q</b>제자리</button><button id="tJump" aria-label="점프"><b>⤒</b>점프</button></div>
+  <div class="row"><button id="tUse" class="big" aria-label="문 열기 / 사용"><b>E</b>문·사용</button></div>
+</div>
 
 <div id="intro"><div class="card"><div class="eyebrow">GWANPYEONG PUBLIC LIBRARY</div><h1>관평도서관<span>문을 여는 중이에요…</span></h1></div></div>
 <div id="prompt" hidden><kbd>E</kbd> 문 열기</div>
@@ -3721,15 +3735,26 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!moved && e.target===canvas){ mouse.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); const h=pick(); if(h) activate(h); else tryLock(); }
   });
   canvas.addEventListener('mouseleave',()=>{ mouseInside=false; });
-  let tId=null, tx=0, ty=0, tMoved=false; const touchMove={f:0};
-  canvas.addEventListener('touchstart',e=>{ if(reading||!started) return; const t=e.changedTouches[0]; tId=t.identifier; tx=t.clientX; ty=t.clientY; tMoved=false; },{passive:true});
+  let tId=null, tx=0, ty=0, tT=0, tMoved=false; const touchMove={f:0,s:0,run:false};
+  canvas.addEventListener('touchstart',e=>{ if(reading||!started) return; const t=e.changedTouches[0]; tId=t.identifier; tx=t.clientX; ty=t.clientY; tT=performance.now(); tMoved=false; },{passive:true});
   canvas.addEventListener('touchmove',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ player.yaw-=(t.clientX-tx)*.005; player.pitch=Math.max(-1.4,Math.min(1.4,player.pitch-(t.clientY-ty)*.005)); if(Math.abs(t.clientX-tx)+Math.abs(t.clientY-ty)>2) tMoved=true; tx=t.clientX; ty=t.clientY; } e.preventDefault(); },{passive:false});
-  canvas.addEventListener('touchend',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ tId=null; if(!tMoved){ mouse.set(t.clientX/innerWidth*2-1,-(t.clientY/innerHeight)*2+1); const h=pick(); if(h) activate(h);} } });
-  const hold=(id,v)=>{ const b=$(id); const on=e=>{e.preventDefault();touchMove.f=v;}, off=()=>{touchMove.f=0;}; b.addEventListener('touchstart',on,{passive:false}); b.addEventListener('touchend',off); b.addEventListener('touchcancel',off); b.addEventListener('mousedown',on); b.addEventListener('mouseup',off); b.addEventListener('mouseleave',off); };
-  hold('tFwd',1); hold('tBack',-1);
-  $('tJump').addEventListener('touchstart',e=>{ e.preventDefault(); jumpQueued=true; },{passive:false});
-  $('tJump').addEventListener('click',()=>{ jumpQueued=true; });
-  $('tUse').addEventListener('click',()=>hooks.use && hooks.use());
+  // tap: use what is under the finger; press and hold (no drag): pick the book up, like a right-click
+  canvas.addEventListener('touchend',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ tId=null; if(!tMoved){ mouse.set(t.clientX/innerWidth*2-1,-(t.clientY/innerHeight)*2+1); const h=pick(); if(h){ if(performance.now()-tT>450 && (h.type==='f'||h.type==='d')) takeBook(h); else activate(h); } } } });
+  // the joystick: forward/back and strafe from the knob offset; pushed to the rim it runs
+  { const st=$('stick'), knob=$('knob'); let sid=null, cx=0, cy=0; const R=42;
+    const set=(dx,dy)=>{ const l=Math.hypot(dx,dy), k=l>R?R/l:1; dx*=k; dy*=k; knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; touchMove.f = m<.15?0:-dy/R; touchMove.s = m<.15?0:dx/R; touchMove.run = m>.97; };
+    st.addEventListener('touchstart',e=>{ e.preventDefault(); if(sid!==null) return; const t=e.changedTouches[0]; sid=t.identifier; const r=st.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; set(t.clientX-cx,t.clientY-cy); },{passive:false});
+    st.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===sid) set(t.clientX-cx,t.clientY-cy); },{passive:false});
+    const end=e=>{ for(const t of e.changedTouches) if(t.identifier===sid){ sid=null; knob.style.transform=''; touchMove.f=touchMove.s=0; touchMove.run=false; } };
+    st.addEventListener('touchend',end); st.addEventListener('touchcancel',end); }
+  const tap=(id,fn)=>{ const b=$(id); b.addEventListener('touchstart',e=>{ e.preventDefault(); fn(); },{passive:false}); b.addEventListener('click',fn); };   // touchstart's preventDefault suppresses the click on touch, so each tap fires once
+  tap('tJump',()=>{ jumpQueued=true; });
+  tap('tUse',()=>hooks.use && hooks.use());
+  tap('tRead',()=>hooks.read && hooks.read());
+  tap('tDrop',()=>hooks.drop && hooks.drop());
+  tap('tView',()=>hooks.view && hooks.view());
+  tap('tName',()=>hooks.rename && hooks.rename());
+  tap('tLook',()=>hooks.relook && hooks.relook());
 
   $('intro').classList.add('done'); setTimeout(()=>$('intro').hidden=true,900);
   started=true; $('paused').hidden=false;
@@ -3748,7 +3773,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!reading && !searchOpen && started){
       if(keys.has('KeyW')) f+=1; if(keys.has('KeyS')) f-=1;
       if(keys.has('KeyD')) sx+=1; if(keys.has('KeyA')) sx-=1;
-      f+=touchMove.f;
+      f+=touchMove.f; sx+=touchMove.s;
     } else jumpQueued=false;
     if(elev.moving && elev.riding){ player.vx=player.vz=0; jumpQueued=false; return; }
     if(auto){
@@ -3782,7 +3807,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(f>0 && player.y<.6 && player.y>-1) for(const L of ladders){
       if(Math.abs(player.z-L.z)<.5 && Math.abs(player.x-L.bottomX)<1.1 && L.side*(player.x-L.bottomX)<.3 && L.side*(-Math.sin(player.yaw))>.5){ player.ladder=L; player.y=Math.max(player.y,.02); player.vy=0; jumpQueued=false; return; }
     }
-    const speed = (keys.has('ShiftLeft')||keys.has('ShiftRight')) ? 5.0 : 2.5;
+    const speed = (keys.has('ShiftLeft')||keys.has('ShiftRight')||touchMove.run) ? 5.0 : 2.5;
     const fx=-Math.sin(player.yaw), fz=-Math.cos(player.yaw), rx=Math.cos(player.yaw), rz=-Math.sin(player.yaw);
     let tvx=fx*f+rx*sx, tvz=fz*f+rz*sx; const l=Math.hypot(tvx,tvz); if(l>0){ tvx=tvx/l*speed; tvz=tvz/l*speed; }
     const k=1-Math.exp(-(player.ground?10:3)*dt); player.vx+=(tvx-player.vx)*k; player.vz+=(tvz-player.vz)*k;
