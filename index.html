@@ -3166,10 +3166,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const grey=new THREE.MeshStandardMaterial({color:new THREE.Color('#9a9ea2').convertSRGBToLinear(),roughness:.8});
     slab(x0,x1,yc,yc+.3,BR_Z0-.2,BR_Z1+.2,grey);                                  // roof / ceiling
     const black=solid('#17181b');
+    const brGlass=new THREE.MeshStandardMaterial({color:new THREE.Color('#a9cde2').convertSRGBToLinear(),transparent:true,opacity:.38,roughness:.08,metalness:.25,envMapIntensity:.6,side:THREE.DoubleSide,depthWrite:false});   // tinted so the walls read as glass, not as open air
     for(const [z,sd] of [[BR_Z0,-1],[BR_Z1,1]]){
       slab(x0,x1,y0,y0+.45,z-.08,z+.08,X.white); slab(x0,x1,yc-.12,yc,z-.08,z+.08,X.white);      // sill and head
-      const gl=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,yc-y0-.57),M.glass); gl.position.set((x0+x1)/2,(y0+.45+yc-.12)/2,z); scene.add(gl);
-      for(let x=x0;x<=x1+.01;x+=(x1-x0)/4) box(.08,yc-y0,.1,X.white,x,(y0+yc)/2,z);            // mullions
+      const gl=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,yc-y0-.57),brGlass); gl.position.set((x0+x1)/2,(y0+.45+yc-.12)/2,z); scene.add(gl);
+      for(let x=x0;x<=x1+.01;x+=(x1-x0)/8) box(.08,yc-y0,.1,X.white,x,(y0+yc)/2,z);            // mullions, every metre or so
       box(x1-x0,.06,.1,X.white,(x0+x1)/2,y0+1.5,z);                                                // transom
       for(let k=0;k<4;k++){ const a=x0+(x1-x0)*k/4, b=x0+(x1-x0)*(k+1)/4;                           // one brace per bay
         const len=Math.hypot(b-a,yc-y0-.5), br=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,len,10),black);
