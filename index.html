@@ -670,7 +670,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       for(const off of [-9.5,9.5]){ const line=k*CELL+CELL/2;
         if(Math.abs(t)<200 || rand()<.5){ addTree(line+off,t+rr(-1,1),rr(.8,1.2)); addTree(t+rr(-1,1),line+off,rr(.8,1.2)); } }
     }
-    for(const x of [-9.6,-5.2,7.4,11.2]) addTree(x,RL+14.2,rr(1,1.15));     // street trees just beyond the fence
+    for(const x of [-9.6,-5.2,7.4,15.6]) addTree(x,RL+14.2,rr(1,1.15));     // street trees just beyond the fence (none on the crossing)
+    for(const c of crowns) if(Math.abs(c[1]-49.5)<1.5){ if(c[0]>2 && c[0]<6.5) c[0]=8.3; }   // the far-side trees that hid the school's name move left, clear of the sign and the crossing
     for(let x=-34;x<=34;x+=6) if(x<-15||x>20) addTree(x,RL+10+rr(-1,1),rr(.9,1.2));
     const filtered=crowns.map((c,i)=>i).filter(i=>{ const [x,z]=crowns[i]; return !(x>-15 && x<19 && z>-RL-2 && z<RL+13.6); });
     const trunkGeo=new THREE.CylinderGeometry(.12,.18,3,6); trunkGeo.translate(0,1.5,0);
@@ -760,7 +761,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       for(let x=64;x<w;x+=128){ g.fillStyle='#e26e3a'; g.beginPath(); g.arc(x,92,8,0,7); g.fill(); } });
     fTex.wrapS=THREE.RepeatWrapping;
     const fMat=new THREE.MeshStandardMaterial({map:fTex,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3});
-    for(const [x0,x1] of [[-14.2,-1.6],[1.6,19.6]]){
+    for(const [x0,x1] of [[-14.2,9.1],[13.9,19.6]]){   // closed in front of the door; open only at the crossing
       const len=x1-x0, t=fTex.clone(); t.needsUpdate=true; t.repeat.set(len/4,1);
       const f=new THREE.Mesh(new THREE.PlaneGeometry(len,1.0),new THREE.MeshStandardMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3})); f.position.set((x0+x1)/2,.55,RL+13); f.userData.noShadow=true; scene.add(f);
       for(let x=x0;x<=x1+.01;x+=len/Math.round(len/2.2)) slab(x-.04,x+.04,0,1.12,RL+12.96,RL+13.04,X.steel);
@@ -792,10 +793,13 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       for(const [x,y] of [[300,70],[1700,210]]){ g.strokeStyle='#fff'; g.lineWidth=5; g.beginPath(); g.arc(x,y,30,0,7); g.stroke(); g.font='900 34px "Noto Sans KR", sans-serif'; g.fillText('30',x,y+12); } });
     roadTex.wrapS=roadTex.wrapT=THREE.ClampToEdgeWrapping;
     const road=new THREE.Mesh(new THREE.PlaneGeometry(80,ROAD1-ROAD0),new THREE.MeshStandardMaterial({map:roadTex,roughness:.95})); road.rotation.x=-Math.PI/2; road.position.set(0,.004,(ROAD0+ROAD1)/2); scene.add(road);
-    // the same children's-zone fence on the far sidewalk, unbroken: no crossing here
-    for(const [x0,x1] of [[-36,36]]){ const len=x1-x0, t=fTex.clone(); t.needsUpdate=true; t.repeat.set(len/4,1);
+    // the same children's-zone fence on the far sidewalk, open only at the crossing
+    for(const [x0,x1] of [[-36,9.1],[13.9,36]]){ const len=x1-x0, t=fTex.clone(); t.needsUpdate=true; t.repeat.set(len/4,1);
       const f=new THREE.Mesh(new THREE.PlaneGeometry(len,1.0),new THREE.MeshStandardMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3})); f.position.set((x0+x1)/2,.55,ROAD1+.3); f.userData.noShadow=true; scene.add(f);
       for(let x=x0;x<=x1+.01;x+=len/Math.round(len/2.2)) slab(x-.04,x+.04,0,1.12,ROAD1+.26,ROAD1+.34,X.steel); }
+    // the crossing, to the viewer's left of the gate
+    const zebra=ctex(64,512,(g,w,h)=>{ g.clearRect(0,0,w,h); g.fillStyle='#f4f4f0'; for(let y=16;y<h-8;y+=64) g.fillRect(0,y,w,32); });
+    const cross=new THREE.Mesh(new THREE.PlaneGeometry(4.0,ROAD1-ROAD0-.6),new THREE.MeshStandardMaterial({map:zebra,transparent:true,roughness:.9,depthWrite:false})); cross.rotation.x=-Math.PI/2; cross.position.set(11.5,.008,(ROAD0+ROAD1)/2); cross.userData.noShadow=true; scene.add(cross);
     // inside the wall: the car park (asphalt, white bays) and the drive between the two buildings
     const lotTex=ctex(1024,512,(g,w,h)=>{ g.fillStyle='#5f6164'; g.fillRect(0,0,w,h); for(let i=0;i<2500;i++){ g.fillStyle=`rgba(255,255,255,${srr(.02,.07)})`; g.fillRect(srr(0,w),srr(0,h),srr(1,3),srr(1,3)); }
       g.strokeStyle='rgba(245,245,240,.85)'; g.lineWidth=5; for(let x=0;x<=w;x+=85){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,180); g.stroke(); g.beginPath(); g.moveTo(x,h-180); g.lineTo(x,h); g.stroke(); } },{repeat:[2,1]});
