@@ -1,1 +1,5 @@
 .DS_Store
+
+# reference photos (not part of the app)
+ref_photo/
+.DS_Store
