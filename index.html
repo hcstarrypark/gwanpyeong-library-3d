@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>관평도서관</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +20,7 @@
 }
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var(--chalk);font-family:var(--ui)}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 #c.hover{cursor:pointer}
 
 #cross{position:fixed;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:rgba(255,255,255,.85);pointer-events:none;transition:all .15s;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
@@ -101,9 +102,17 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 .rnav button[disabled]{opacity:.3;cursor:default}
 #pinfo{font-size:12.5px;color:var(--mist);min-width:6em;text-align:center;font-variant-numeric:tabular-nums}
 
-#touch{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;gap:8px;flex-direction:column;z-index:4}
-#touch button{width:58px;height:46px;border-radius:12px;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:16px;font-family:var(--ui)}
-@media (pointer:coarse){#touch{display:flex}#legend{display:none}}
+/* touch controls (phones and tablets): a joystick on the left, round action buttons on the right */
+#touch{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:none;gap:10px;flex-direction:column;align-items:flex-end;z-index:4}
+#touch .row{display:flex;gap:10px;justify-content:flex-end}
+#touch button{width:58px;height:58px;border-radius:50%;border:0;background:rgba(20,22,26,.55);color:#fff;font:700 12px/1.1 var(--ui);backdrop-filter:blur(6px);touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;padding:0}
+#touch button b{display:block;font-size:18px;line-height:1}
+#touch button.big{width:76px;height:76px;background:rgba(47,111,214,.8);font-size:13px}
+#touch button.big b{font-size:22px}
+#touch button:active{background:rgba(255,255,255,.4)}
+#stick{position:fixed;left:max(22px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:136px;height:136px;border-radius:50%;background:rgba(20,22,26,.35);border:2px solid rgba(255,255,255,.3);display:none;z-index:4;touch-action:none;box-sizing:border-box}
+#knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,255,255,.6);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+@media (pointer:coarse){#touch{display:flex}#stick{display:block}#legend,#paused{display:none}}
 /* search kiosk panel */
 #search{position:fixed;inset:0;z-index:11;display:grid;place-items:center;background:rgba(8,9,11,.72);backdrop-filter:blur(4px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sp{width:min(760px,100%);height:min(640px,86vh);display:flex;flex-direction:column;background:#16181c;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.6);padding:20px 20px 10px;gap:12px;box-sizing:border-box}
@@ -207,10 +216,15 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
   <div><kbd>좌클릭</kbd> 책 펼치기 · <kbd>← →</kbd> 넘기기 · <kbd>Esc</kbd> 덮기</div>
   <div><kbd>우클릭</kbd> 책 들기 · <kbd>R</kbd> 읽기 · <kbd>Q</kbd> 제자리에</div>
   <div>의자·벤치 클릭 앉기 · 사다리 마주 보고 <kbd>W</kbd> · <kbd>E</kbd> 문</div>
-  <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기</div>
+  <div><kbd>N</kbd> 내 이름 바꾸기 · <kbd>M</kbd> 내 모습(아바타) 바꾸기 · <kbd>V</kbd> 1인칭/3인칭 시점</div>
 </div></div>
 <div id="paused" hidden>화면을 클릭하면 시점이 고정돼요 · 드래그로도 둘러볼 수 있어요</div>
-<div id="touch"><button id="tUse" aria-label="문 열기">E 문</button><button id="tJump" aria-label="점프">점프</button><button id="tFwd" aria-label="앞으로">▲</button><button id="tBack" aria-label="뒤로">▼</button></div>
+<div id="stick"><div id="knob"></div></div>
+<div id="touch">
+  <div class="row"><button id="tName" aria-label="이름 바꾸기"><b>N</b>이름</button><button id="tLook" aria-label="아바타 바꾸기"><b>M</b>모습</button><button id="tView" aria-label="시점 바꾸기"><b>V</b>시점</button></div>
+  <div class="row"><button id="tRead" aria-label="읽기"><b>R</b>읽기</button><button id="tDrop" aria-label="제자리에"><b>Q</b>제자리</button><button id="tJump" aria-label="점프"><b>⤒</b>점프</button></div>
+  <div class="row"><button id="tUse" class="big" aria-label="문 열기 / 사용"><b>E</b>문·사용</button></div>
+</div>
 
 <div id="intro"><div class="card"><div class="eyebrow">GWANPYEONG PUBLIC LIBRARY</div><h1>관평도서관<span>문을 여는 중이에요…</span></h1></div></div>
 <div id="prompt" hidden><kbd>E</kbd> 문 열기</div>
@@ -364,7 +378,7 @@ addEventListener('resize', ()=>{ if(cur){ const was = single; sizeBook(); if(was
    INPUT STATE
    ============================================================ */
 const keys = new Set();
-let reading = false, locked = false, started = false, jumpQueued = false;
+let reading = false, locked = false, started = false, jumpQueued = false, thirdPerson = false;
 let searchOpen = false, closeSearch = ()=>{}, panelKey = null;
 const hooks = {};
 addEventListener('keydown', e=>{
@@ -381,6 +395,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
   if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
   if(e.code==='KeyM' && hooks.relook && !e.repeat && started) hooks.relook();
+  if(e.code==='KeyV' && hooks.view && !e.repeat && started) hooks.view();
   if(/^Digit[1-4]$/.test(e.code) && hooks.elevPick && !e.repeat && started) hooks.elevPick(+e.code.slice(5)-1);
   if(e.code==='KeyH' && !e.repeat){ const bd=$('lgBody'); bd.hidden=!bd.hidden; $('lgState').textContent=bd.hidden?'보기':'숨기기'; }
   if(e.code==='Space' && !e.repeat) jumpQueued = true;
@@ -647,7 +662,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const fmats=Object.fromEntries(kinds.map(k=>[k,new THREE.MeshStandardMaterial({map:facadeTex(k),roughness:k==='glass'?.25:.85,metalness:k==='glass'?.35:0})]));
     const roofMat=new THREE.MeshStandardMaterial({color:0x9b9890,roughness:.9});
     for(let i=-6;i<=6;i++) for(let j=-6;j<=6;j++){
-      if(i===0 && j===0) continue;
+      if(i===0 && (j===0 || j===1)) continue;   // (0,1) is the elementary school across the road
       const cx=i*CELL, cz=j*CELL, dist=Math.hypot(cx,cz);
       for(const [lx,lz] of [[-17,-17],[17,-17],[-17,17],[17,17]]){
         if(rand()<.12) continue;
@@ -670,7 +685,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       for(const off of [-9.5,9.5]){ const line=k*CELL+CELL/2;
         if(Math.abs(t)<200 || rand()<.5){ addTree(line+off,t+rr(-1,1),rr(.8,1.2)); addTree(t+rr(-1,1),line+off,rr(.8,1.2)); } }
     }
-    for(const x of [-9.6,-5.2,7.4,11.2]) addTree(x,RL+14.2,rr(1,1.15));     // street trees just beyond the fence
+    for(const x of [-9.6,-5.2,7.4,15.6]) addTree(x,RL+14.2,rr(1,1.15));     // street trees just beyond the fence (none on the crossing)
+    for(const c of crowns) if(Math.abs(c[1]-49.5)<1.5){ if(c[0]>2 && c[0]<6.5) c[0]=8.3; }   // the far-side trees that hid the school's name move left, clear of the sign and the crossing
     for(let x=-34;x<=34;x+=6) if(x<-15||x>20) addTree(x,RL+10+rr(-1,1),rr(.9,1.2));
     const filtered=crowns.map((c,i)=>i).filter(i=>{ const [x,z]=crowns[i]; return !(x>-15 && x<19 && z>-RL-2 && z<RL+13.6); });
     const trunkGeo=new THREE.CylinderGeometry(.12,.18,3,6); trunkGeo.translate(0,1.5,0);
@@ -760,7 +776,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       for(let x=64;x<w;x+=128){ g.fillStyle='#e26e3a'; g.beginPath(); g.arc(x,92,8,0,7); g.fill(); } });
     fTex.wrapS=THREE.RepeatWrapping;
     const fMat=new THREE.MeshStandardMaterial({map:fTex,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3});
-    for(const [x0,x1] of [[-14.2,-1.6],[1.6,19.6]]){
+    for(const [x0,x1] of [[-14.2,9.1],[13.9,19.6]]){   // closed in front of the door; open only at the crossing
       const len=x1-x0, t=fTex.clone(); t.needsUpdate=true; t.repeat.set(len/4,1);
       const f=new THREE.Mesh(new THREE.PlaneGeometry(len,1.0),new THREE.MeshStandardMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3})); f.position.set((x0+x1)/2,.55,RL+13); f.userData.noShadow=true; scene.add(f);
       for(let x=x0;x<=x1+.01;x+=len/Math.round(len/2.2)) slab(x-.04,x+.04,0,1.12,RL+12.96,RL+13.04,X.steel);
@@ -772,6 +788,92 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       const hy=new THREE.Mesh(new THREE.CylinderGeometry(.11,.13,.62,14),solid('#c9302c')); hy.position.set(-2.3,.31,RL+12.6); scene.add(hy);
       const ps=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,2.4,8),X.steel); ps.position.set(-5.6,1.2,RL+12.5); scene.add(ps);
       sign(.42,.42,128,128,(g,w,h)=>{ g.clearRect(0,0,w,h); g.fillStyle='#1f5fbf'; g.beginPath(); g.arc(64,64,62,0,7); g.fill(); g.fillStyle='#fff'; g.font='900 74px "Noto Sans KR", sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('P',64,68); },scene,-5.6,2.2,RL+12.53,0,0,true,true); }
+    buildSchool(fTex);
+  }
+
+  /* ---------- across the road: 대전관평초등학교, seen from the library entrance ----------
+     The road is a red school-zone street. Behind the gate wall is the school's car park; the school itself faces
+     west (-x, the viewer's right): a long beige main building running away from the viewer, so only its short end shows from here,
+     a red-brick building to its right, and a glazed footbridge joining the two. The yard lies behind them.
+     Uses its own random stream so nothing else in the scene changes. */
+  function buildSchool(fTex){
+    const sr=mulberry32(7721), srr=(a,b)=>a+(b-a)*sr(), lin=c=>new THREE.Color(c).convertSRGBToLinear();
+    const ROAD0=RL+13.3, ROAD1=47, WALL=52;                  // beyond the library fence, the road, the school wall
+    // red school-zone road with lane marks
+    const roadTex=ctex(2048,256,(g,w,h)=>{ g.fillStyle='#a04a3e'; g.fillRect(0,0,w,h);
+      for(let i=0;i<900;i++){ g.fillStyle=`rgba(0,0,0,${srr(.02,.08)})`; g.fillRect(srr(0,w),srr(0,h),srr(2,9),srr(2,9)); }
+      g.strokeStyle='#f3e9c8'; g.lineWidth=4; g.setLineDash([40,30]); g.beginPath(); g.moveTo(0,h/2); g.lineTo(w,h/2); g.stroke(); g.setLineDash([]);
+      g.fillStyle='#fff'; g.font='900 46px "Noto Sans KR", sans-serif'; g.textAlign='center';
+      for(const [x,y] of [[500,70],[1500,70],[500,210],[1500,210]]){ g.save(); g.translate(x,y); g.rotate(y<h/2?Math.PI:0); g.fillText('어린이보호구역',0,16); g.restore(); }
+      for(const [x,y] of [[300,70],[1700,210]]){ g.strokeStyle='#fff'; g.lineWidth=5; g.beginPath(); g.arc(x,y,30,0,7); g.stroke(); g.font='900 34px "Noto Sans KR", sans-serif'; g.fillText('30',x,y+12); } });
+    roadTex.wrapS=roadTex.wrapT=THREE.ClampToEdgeWrapping;
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(80,ROAD1-ROAD0),new THREE.MeshStandardMaterial({map:roadTex,roughness:.95})); road.rotation.x=-Math.PI/2; road.position.set(0,.004,(ROAD0+ROAD1)/2); scene.add(road);
+    // the same children's-zone fence on the far sidewalk, open only at the crossing
+    for(const [x0,x1] of [[-36,9.1],[13.9,36]]){ const len=x1-x0, t=fTex.clone(); t.needsUpdate=true; t.repeat.set(len/4,1);
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(len,1.0),new THREE.MeshStandardMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide,roughness:.5,metalness:.3})); f.position.set((x0+x1)/2,.55,ROAD1+.3); f.userData.noShadow=true; scene.add(f);
+      for(let x=x0;x<=x1+.01;x+=len/Math.round(len/2.2)) slab(x-.04,x+.04,0,1.12,ROAD1+.26,ROAD1+.34,X.steel); }
+    // the crossing, to the viewer's left of the gate
+    const zebra=ctex(64,512,(g,w,h)=>{ g.clearRect(0,0,w,h); g.fillStyle='#f4f4f0'; for(let y=16;y<h-8;y+=64) g.fillRect(0,y,w,32); });
+    const cross=new THREE.Mesh(new THREE.PlaneGeometry(4.0,ROAD1-ROAD0-.6),new THREE.MeshStandardMaterial({map:zebra,transparent:true,roughness:.9,depthWrite:false})); cross.rotation.x=-Math.PI/2; cross.position.set(11.5,.008,(ROAD0+ROAD1)/2); cross.userData.noShadow=true; scene.add(cross);
+    // inside the wall: the car park (asphalt, white bays) and the drive between the two buildings
+    const lotTex=ctex(1024,512,(g,w,h)=>{ g.fillStyle='#5f6164'; g.fillRect(0,0,w,h); for(let i=0;i<2500;i++){ g.fillStyle=`rgba(255,255,255,${srr(.02,.07)})`; g.fillRect(srr(0,w),srr(0,h),srr(1,3),srr(1,3)); }
+      g.strokeStyle='rgba(245,245,240,.85)'; g.lineWidth=5; for(let x=0;x<=w;x+=85){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,180); g.stroke(); g.beginPath(); g.moveTo(x,h-180); g.lineTo(x,h); g.stroke(); } },{repeat:[2,1]});
+    const lot=new THREE.Mesh(new THREE.PlaneGeometry(66,14),new THREE.MeshStandardMaterial({map:lotTex,roughness:.95})); lot.rotation.x=-Math.PI/2; lot.position.set(0,.003,WALL+7); scene.add(lot);
+    const drive=new THREE.Mesh(new THREE.PlaneGeometry(12,50),new THREE.MeshStandardMaterial({color:lin(0x66686b),roughness:.95})); drive.rotation.x=-Math.PI/2; drive.position.set(-9,.002,WALL+14+25); scene.add(drive);
+    const lawn=new THREE.Mesh(new THREE.PlaneGeometry(66,52),new THREE.MeshStandardMaterial({color:lin(0x7d9158),roughness:1})); lawn.rotation.x=-Math.PI/2; lawn.position.set(0,.001,WALL+14+26); scene.add(lawn);
+    // the yard, tucked behind both buildings
+    const yardTex=ctex(1024,512,(g,w,h)=>{ g.fillStyle='#cdb892'; g.fillRect(0,0,w,h); for(let i=0;i<3000;i++){ g.fillStyle=`rgba(${srr(90,140)|0},${srr(70,110)|0},${srr(40,70)|0},${srr(.05,.2)})`; g.fillRect(srr(0,w),srr(0,h),srr(1,4),srr(1,4)); }
+      g.strokeStyle='rgba(255,255,255,.55)'; g.lineWidth=5; g.strokeRect(120,70,780,370); g.beginPath(); g.moveTo(512,70); g.lineTo(512,440); g.stroke(); g.beginPath(); g.arc(512,255,70,0,7); g.stroke(); });
+    const yard=new THREE.Mesh(new THREE.PlaneGeometry(40,24),new THREE.MeshStandardMaterial({map:yardTex,roughness:1})); yard.rotation.x=-Math.PI/2; yard.position.set(-22,.004,96); scene.add(yard);
+    // facades: beige render with white-framed windows for the main building; red brick for the other
+    const beigeTex=ctex(512,512,(g,w,h)=>{ g.fillStyle='#d9c9a6'; g.fillRect(0,0,w,h); for(let i=0;i<1200;i++){ g.fillStyle=`rgba(${srr(150,200)|0},${srr(130,170)|0},${srr(90,130)|0},${srr(.05,.15)})`; g.fillRect(srr(0,w),srr(0,h),srr(2,6),srr(2,6)); }
+      for(let x=40;x<w-40;x+=160){ g.fillStyle='#f1f1ec'; g.fillRect(x-6,150,132,160); g.fillStyle='#6f8aa0'; g.fillRect(x,156,120,148); g.fillStyle='rgba(255,255,255,.28)'; g.fillRect(x,156,120,26); g.fillStyle='#f1f1ec'; g.fillRect(x+58,156,5,148); g.fillRect(x,228,120,5); }
+      g.fillStyle='#bfae8c'; g.fillRect(0,318,w,10); });
+    const brickTex=ctex(512,512,(g,w,h)=>{ g.fillStyle='#9c4634'; g.fillRect(0,0,w,h);
+      for(let y=0;y<h;y+=8) for(let x=(y/8)%2*8;x<w;x+=16){ g.fillStyle=`rgba(${srr(150,200)|0},${srr(60,90)|0},${srr(45,65)|0},.75)`; g.fillRect(x,y,15,7); }
+      for(let x=40;x<w-40;x+=160){ g.fillStyle='#eceee9'; g.fillRect(x-6,150,132,160); g.fillStyle='#6f8aa0'; g.fillRect(x,156,120,148); g.fillStyle='rgba(255,255,255,.28)'; g.fillRect(x,156,120,26); g.fillStyle='#eceee9'; g.fillRect(x+58,156,5,148); g.fillRect(x,228,120,5); }
+      g.fillStyle='#e9e3d6'; g.fillRect(0,312,w,14); g.fillStyle='rgba(0,0,0,.12)'; g.fillRect(0,326,w,6); });
+    const ST=3.6, beige=new THREE.MeshStandardMaterial({map:beigeTex,roughness:.85}), brick=new THREE.MeshStandardMaterial({map:brickTex,roughness:.85});
+    const parapet=new THREE.MeshStandardMaterial({color:lin(0xe9e4da),roughness:.8}), roofM=new THREE.MeshStandardMaterial({color:lin(0x8e9196),roughness:.9});
+    const glassM=new THREE.MeshStandardMaterial({color:lin(0x9fc3dc),roughness:.15,metalness:.4,transparent:true,opacity:.6});
+    const block=(x0,x1,z0,z1,floors,m)=>{ const hgt=floors*ST; slab(x0,x1,0,hgt,z0,z1,[m,m,roofM,roofM,m,m],ST); slab(x0-.12,x1+.12,hgt-.05,hgt+.55,z0-.12,z1+.12,parapet); return hgt; };
+    const MX0=-3, MX1=13, BX0=-31, BX1=-15, Z0=WALL+14, BZ0=WALL+1.5;   // main building on the viewer's left (+x) past the car park; the brick hall on the right, right behind the wall
+    const mh=block(MX0,MX1,Z0,Z0+44,4,beige);                   // main building: long along the view, short end towards us
+    block(BX0,BX1,BZ0,BZ0+26,3,brick);                          // red-brick hall, almost on the fence
+    // the main entrance on the east face, with a canopy and columns; the name over the short end that faces the library
+    slab(MX0-3.2,MX0,ST,ST+.45,Z0+18,Z0+26,X.white); for(const z of [Z0+18.6,Z0+25.4]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,ST,16),X.white); c.position.set(MX0-2.8,ST/2,z); scene.add(c); }
+    // the school emblem (교표) from the school's site; the signs draw a plain ring until it has loaded, then redraw with it
+    const emblem=new Image(); emblem.src='media/school-emblem.gif';
+    const drawEmblem=(g,cx,cy,r)=>{ g.fillStyle='#fff'; g.beginPath(); g.arc(cx,cy,r,0,7); g.fill();
+      if(emblem.complete && emblem.naturalWidth){ g.save(); g.beginPath(); g.arc(cx,cy,r-4,0,7); g.clip(); g.drawImage(emblem,cx-r+4,cy-r+4,2*r-8,2*r-8); g.restore(); }
+      else { g.fillStyle='#1d4f8f'; g.beginPath(); g.arc(cx,cy,r-12,0,7); g.fill(); } };
+    const drawName=(g,w,h)=>{ g.fillStyle='#2b6cb0'; g.fillRect(0,0,w,h); drawEmblem(g,120,109,84);
+      g.fillStyle='#fff'; g.textAlign='left'; g.textBaseline='middle'; g.font='900 128px "Noto Sans KR", sans-serif'; g.fillText('대전관평초등학교',240,112); };
+    const nameSign=sign(13,1.7,1664,218,drawName,scene,(MX0+MX1)/2,mh-1.5,Z0-.04,Math.PI,.15,false);
+    // the footbridge between the two buildings: a glazed box on the second floor with a white frame
+    { const y0=ST*1+.2, y1=ST*2-.2, bz0=Z0+4, bz1=Z0+8;
+      slab(BX1,MX0,y0,y0+.35,bz0,bz1,X.white); slab(BX1,MX0,y1-.35,y1,bz0,bz1,X.white); slab(BX1-.1,MX0+.1,y1,y1+.3,bz0-.2,bz1+.2,roofM);
+      slab(BX1,MX0,y0+.35,y1-.35,bz0,bz0+.06,glassM); slab(BX1,MX0,y0+.35,y1-.35,bz1-.06,bz1,glassM);
+      for(let x=BX1+2;x<MX0;x+=2) for(const z of [bz0,bz1-.08]) slab(x-.04,x+.04,y0,y1,z,z+.08,X.white);
+      for(const x of [BX1+3.5,MX0-3.5]){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,y0,16),X.white); c.position.set(x,y0/2,(bz0+bz1)/2); scene.add(c); } }
+    // the wall and gate on the road: low granite wall with a hedge, stone gateposts, the banner, the old stone marker
+    for(const [x0,x1] of [[-33,-4.6],[4.6,33]]){ slab(x0,x1,0,.6,WALL-.15,WALL+.15,X.granite,1.2); box(x1-x0,.9,.7,new THREE.MeshStandardMaterial({color:lin(0x4d7a3c),roughness:1}),(x0+x1)/2,1.05,WALL+.55); }
+    for(const x of [-4.6,4.6]){ slab(x-.55,x+.55,0,2.5,WALL-.55,WALL+.55,X.granite,1.2); slab(x-.65,x+.65,2.5,2.7,WALL-.65,WALL+.65,X.granite,1.2); }
+    slab(1.2,4.0,0,1.6,WALL-.03,WALL+.03,X.steel); for(let x=1.2;x<4;x+=.14) slab(x-.012,x+.012,0,1.6,WALL-.03,WALL+.03,X.steel);   // one leaf of the sliding gate, half open
+    // the banner over the gate: "꿈·감동·즐거움이 넘치는 행복한 관평배움터" on light blue, with the emblem
+    const drawBanner=(g,w,h)=>{ g.fillStyle='#bfe1ec'; g.fillRect(0,0,w,h); g.fillStyle='#a9d3e2'; g.fillRect(0,0,w,10); g.fillRect(0,h-10,w,10);
+      g.textBaseline='middle'; g.textAlign='left'; g.font='900 64px "Noto Sans KR", sans-serif';
+      let x=330; for(const [t,c] of [['꿈','#2f6b3a'],[' · ','#2f6b3a'],['감동','#2f6b3a'],[' · ','#2f6b3a'],['즐거움','#5aa83c'],['이 넘치는','#2f6b3a']]){ g.fillStyle=c; g.fillText(t,x,70); x+=g.measureText(t).width; }
+      g.fillStyle='#2f6fd6'; g.font='900 96px "Noto Sans KR", sans-serif'; g.fillText('행복한 관평배움터',330,170);
+      drawEmblem(g,150,h/2,100); };
+    const banner=sign(8.4,1.6,1344,256,drawBanner,scene,0,3.4,WALL-.02,Math.PI,0,true);
+    const signTex=[[nameSign.children[0].material.map,drawName],[banner.children[0].material.map,drawBanner]];   // grab the textures now: the meshes get merged into static batches later
+    emblem.onload=()=>{ for(const [t,draw] of signTex){ const c=t.image; draw(c.getContext('2d'),c.width,c.height); t.needsUpdate=true; } };
+    { const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),new THREE.MeshStandardMaterial({color:lin(0x5c5e60),roughness:.95,flatShading:true})); rock.position.set(7.2,1.1,WALL+1.6); rock.scale.set(.9,1.4,.6); rock.rotation.y=.4; scene.add(rock);
+      slab(6.0,8.4,0,.35,WALL+.9,WALL+2.3,X.granite,1.2); }
+    // a few parked cars in the bays
+    for(const [x,c] of [[-11,0xf2f2f0],[-7,0x2b2f36],[2,0xd8dde2],[9,0xf2f2f0],[14,0x3a4a62],[19,0xe9eaec],[25,0x1d1f22]]){
+      const m=new THREE.MeshStandardMaterial({color:lin(c),roughness:.35,metalness:.25}); box(1.8,.55,4.4,m,x,.45,WALL+4.2); box(1.6,.5,2.4,m,x,.95,WALL+4.0); for(const [dx,dz] of [[-.75,1.4],[.75,1.4],[-.75,-1.4],[.75,-1.4]]){ const t=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.22,12),M.black); t.rotation.z=Math.PI/2; t.position.set(x+dx,.3,WALL+4.2+dz); scene.add(t); } }
   }
 
   /* ---------- room shell ---------- */
@@ -1811,6 +1913,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     addEventListener('pagehide',()=>{ for(const c of mpClients) try{ c.publish(MP_TOPIC+'st/'+mp.id,JSON.stringify({id:mp.id,bye:1})); c.end(); }catch(e){} });
   }
   hooks.rename=()=>{ if(!searchOpen && !reading) openIdent(false); };
+  hooks.view=()=>{ if(reading||searchOpen) return; thirdPerson=!thirdPerson; if(thirdPerson) camera.layers.enable(1); else camera.layers.disable(1); toast(thirdPerson?'3인칭 시점 · V 키로 1인칭으로':'1인칭 시점'); };
   hooks.relook=()=>{
     mp.look=randomLook(); mpSave(); mp.force=true;
     scene.remove(myFig.g); myFig=makeFigure(mp.look,1); scene.add(myFig.g);
@@ -3285,7 +3388,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   let shownFloor=-1;
   function showFloor(fl){
     if(fl===shownFloor) return; shownFloor=fl;
-    camera.layers.set(0); camera.layers.enable(2+fl);
+    camera.layers.set(0); camera.layers.enable(2+fl); if(thirdPerson) camera.layers.enable(1);
     for(const S of decorSets) S.im.visible = S.fl===fl;
     lightPool.forEach((L,i)=>{ const sp=lightSpecs[fl][i]; if(sp){ L.position.copy(sp.p); L.intensity=sp.k; L.distance=sp.d; L.decay=sp.dc; L.color.copy(sp.c); } else L.intensity=0; });
   }
@@ -3371,6 +3474,9 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function pick(){
     if(locked) ray.setFromCamera({x:0,y:0},camera); else ray.setFromCamera(mouse,camera);
+    if(thirdPerson){ // the camera sits behind the reader: start the reach at the reader's head, not at the camera
+      const eye=new THREE.Vector3(player.x,player.camY,player.z), t=eye.sub(ray.ray.origin).dot(ray.ray.direction);
+      if(t>0) ray.ray.origin.addScaledVector(ray.ray.direction,t); }
     ray.layers.set(0); ray.layers.enable(2+Math.max(0,shownFloor));
     const occ = ray.intersectObjects(occluders,false)[0];
     const limit = Math.min(ray.far, occ ? occ.distance : Infinity);
@@ -3632,15 +3738,26 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!moved && e.target===canvas){ mouse.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); const h=pick(); if(h) activate(h); else tryLock(); }
   });
   canvas.addEventListener('mouseleave',()=>{ mouseInside=false; });
-  let tId=null, tx=0, ty=0, tMoved=false; const touchMove={f:0};
-  canvas.addEventListener('touchstart',e=>{ if(reading||!started) return; const t=e.changedTouches[0]; tId=t.identifier; tx=t.clientX; ty=t.clientY; tMoved=false; },{passive:true});
+  let tId=null, tx=0, ty=0, tT=0, tMoved=false; const touchMove={f:0,s:0,run:false};
+  canvas.addEventListener('touchstart',e=>{ if(reading||!started) return; const t=e.changedTouches[0]; tId=t.identifier; tx=t.clientX; ty=t.clientY; tT=performance.now(); tMoved=false; },{passive:true});
   canvas.addEventListener('touchmove',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ player.yaw-=(t.clientX-tx)*.005; player.pitch=Math.max(-1.4,Math.min(1.4,player.pitch-(t.clientY-ty)*.005)); if(Math.abs(t.clientX-tx)+Math.abs(t.clientY-ty)>2) tMoved=true; tx=t.clientX; ty=t.clientY; } e.preventDefault(); },{passive:false});
-  canvas.addEventListener('touchend',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ tId=null; if(!tMoved){ mouse.set(t.clientX/innerWidth*2-1,-(t.clientY/innerHeight)*2+1); const h=pick(); if(h) activate(h);} } });
-  const hold=(id,v)=>{ const b=$(id); const on=e=>{e.preventDefault();touchMove.f=v;}, off=()=>{touchMove.f=0;}; b.addEventListener('touchstart',on,{passive:false}); b.addEventListener('touchend',off); b.addEventListener('touchcancel',off); b.addEventListener('mousedown',on); b.addEventListener('mouseup',off); b.addEventListener('mouseleave',off); };
-  hold('tFwd',1); hold('tBack',-1);
-  $('tJump').addEventListener('touchstart',e=>{ e.preventDefault(); jumpQueued=true; },{passive:false});
-  $('tJump').addEventListener('click',()=>{ jumpQueued=true; });
-  $('tUse').addEventListener('click',()=>hooks.use && hooks.use());
+  // tap: use what is under the finger; press and hold (no drag): pick the book up, like a right-click
+  canvas.addEventListener('touchend',e=>{ for(const t of e.changedTouches) if(t.identifier===tId){ tId=null; if(!tMoved){ mouse.set(t.clientX/innerWidth*2-1,-(t.clientY/innerHeight)*2+1); const h=pick(); if(h){ if(performance.now()-tT>450 && (h.type==='f'||h.type==='d')) takeBook(h); else activate(h); } } } });
+  // the joystick: forward/back and strafe from the knob offset; pushed to the rim it runs
+  { const st=$('stick'), knob=$('knob'); let sid=null, cx=0, cy=0; const R=42;
+    const set=(dx,dy)=>{ const l=Math.hypot(dx,dy), k=l>R?R/l:1; dx*=k; dy*=k; knob.style.transform=`translate(${dx}px,${dy}px)`; const m=Math.hypot(dx,dy)/R; touchMove.f = m<.15?0:-dy/R; touchMove.s = m<.15?0:dx/R; touchMove.run = m>.97; };
+    st.addEventListener('touchstart',e=>{ e.preventDefault(); if(sid!==null) return; const t=e.changedTouches[0]; sid=t.identifier; const r=st.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; set(t.clientX-cx,t.clientY-cy); },{passive:false});
+    st.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===sid) set(t.clientX-cx,t.clientY-cy); },{passive:false});
+    const end=e=>{ for(const t of e.changedTouches) if(t.identifier===sid){ sid=null; knob.style.transform=''; touchMove.f=touchMove.s=0; touchMove.run=false; } };
+    st.addEventListener('touchend',end); st.addEventListener('touchcancel',end); }
+  const tap=(id,fn)=>{ const b=$(id); b.addEventListener('touchstart',e=>{ e.preventDefault(); fn(); },{passive:false}); b.addEventListener('click',fn); };   // touchstart's preventDefault suppresses the click on touch, so each tap fires once
+  tap('tJump',()=>{ jumpQueued=true; });
+  tap('tUse',()=>hooks.use && hooks.use());
+  tap('tRead',()=>hooks.read && hooks.read());
+  tap('tDrop',()=>hooks.drop && hooks.drop());
+  tap('tView',()=>hooks.view && hooks.view());
+  tap('tName',()=>hooks.rename && hooks.rename());
+  tap('tLook',()=>hooks.relook && hooks.relook());
 
   $('intro').classList.add('done'); setTimeout(()=>$('intro').hidden=true,900);
   started=true; $('paused').hidden=false;
@@ -3659,7 +3776,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!reading && !searchOpen && started){
       if(keys.has('KeyW')) f+=1; if(keys.has('KeyS')) f-=1;
       if(keys.has('KeyD')) sx+=1; if(keys.has('KeyA')) sx-=1;
-      f+=touchMove.f;
+      f+=touchMove.f; sx+=touchMove.s;
     } else jumpQueued=false;
     if(elev.moving && elev.riding){ player.vx=player.vz=0; jumpQueued=false; return; }
     if(auto){
@@ -3693,7 +3810,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(f>0 && player.y<.6 && player.y>-1) for(const L of ladders){
       if(Math.abs(player.z-L.z)<.5 && Math.abs(player.x-L.bottomX)<1.1 && L.side*(player.x-L.bottomX)<.3 && L.side*(-Math.sin(player.yaw))>.5){ player.ladder=L; player.y=Math.max(player.y,.02); player.vy=0; jumpQueued=false; return; }
     }
-    const speed = (keys.has('ShiftLeft')||keys.has('ShiftRight')) ? 5.0 : 2.5;
+    const speed = (keys.has('ShiftLeft')||keys.has('ShiftRight')||touchMove.run) ? 5.0 : 2.5;
     const fx=-Math.sin(player.yaw), fz=-Math.cos(player.yaw), rx=Math.cos(player.yaw), rz=-Math.sin(player.yaw);
     let tvx=fx*f+rx*sx, tvz=fz*f+rz*sx; const l=Math.hypot(tvx,tvz); if(l>0){ tvx=tvx/l*speed; tvz=tvz/l*speed; }
     const k=1-Math.exp(-(player.ground?10:3)*dt); player.vx+=(tvx-player.vx)*k; player.vz+=(tvz-player.vz)*k;
@@ -3720,8 +3837,14 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     player.land=Math.max(0,player.land-dt*.6);
     const targetY = player.y+(player.seat?player.seat.eye:EYE) + (player.ground?Math.sin(player.bob*2)*.02*Math.min(1,sp/2.5):0) - player.land*.6;
     player.camY += (targetY-player.camY)*Math.min(1,(player.ground?14:40)*dt);
-    camera.position.set(player.x, player.camY, player.z);
-    camera.rotation.set(player.pitch, player.yaw, Math.sin(player.bob)*.003*Math.min(1,sp/2.5));
+    if(thirdPerson){   // over the shoulder: pull the camera back along the view line, stopping short of walls and furniture
+      const cp=Math.cos(player.pitch), fx=-Math.sin(player.yaw)*cp, fy=Math.sin(player.pitch), fz=-Math.cos(player.yaw)*cp, rx=Math.cos(player.yaw), rz=-Math.sin(player.yaw);
+      const hx=player.x+rx*.4, hy=player.camY+.25, hz=player.z+rz*.4; let d=.5;
+      const flo=player.y, ceilY=player.z>RL+FACADE_T ? 99 : player.y>R4-1.2 ? RC : player.y>F2-1.2 ? C3 : player.y>FL-1.2 ? C2 : RH;   // stay between this floor and its ceiling
+      for(let k=.5;k<=3.2;k+=.15){ const cx=hx-fx*k, cy=hy-fy*k, cz=hz-fz*k; if(cy<flo+.3 || cy>ceilY-.2 || blocked(cx,cz,cy-1.2)) break; d=k; }
+      camera.position.set(hx-fx*d, hy-fy*d, hz-fz*d);
+    } else camera.position.set(player.x, player.camY, player.z);
+    camera.rotation.set(player.pitch, player.yaw, thirdPerson?0:Math.sin(player.bob)*.003*Math.min(1,sp/2.5));
 
     if(!locked){ tipEl.style.left=((mouse.x+1)/2*innerWidth)+'px'; tipEl.style.top=((1-mouse.y)/2*innerHeight+22)+'px'; } else { tipEl.style.left=''; tipEl.style.top=''; }
     hoverT+=dt;
