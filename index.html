@@ -1416,6 +1416,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(mode==='name'){
       $('idTitle').textContent=idFirst?'반가워요! 이름을 정해 주세요':'이름 바꾸기'; $('idSub').textContent='다른 방문자에게 이 이름이 보여요 (16자까지)';
       inp.type='text'; inp.value=idFirst?'':mp.name; inp.placeholder=mp.name; $('idNote').hidden=false; $('idCancel').textContent=idFirst?'나중에':'취소';
+    } else if(mode==='gname' || mode==='gpass'){
+      $('idTitle').textContent='💂 경비원 확인';
+      $('idSub').textContent= mode==='gname' ? '여기부터는 관계자만 들어갈 수 있어요. 이름을 말씀해 주세요' : '비밀번호도 말씀해 주세요';
+      inp.type= mode==='gname' ? 'text' : 'password'; inp.value=''; inp.placeholder= mode==='gname' ? '이름' : '비밀번호'; $('idNote').hidden=true; $('idCancel').textContent='돌아가기';
     } else {
       $('idTitle').textContent='🔑 보안 확인'; $('idSub').textContent=idName+' 님, 보안 패스키를 받으려면 비밀번호를 입력하세요';
       inp.type='password'; inp.value=''; inp.placeholder='비밀번호'; $('idNote').hidden=true; $('idCancel').textContent='돌아가기';
@@ -1423,16 +1427,27 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     $('idMsg').textContent=msg||''; $('idMsg').className='lk-msg '+(cls||'');
     setTimeout(()=>{ inp.focus(); inp.select(); },30);
   }
-  function openIdent(first){
+  function openIdent(first,mode='name'){
     idFirst=!!first;
     openPanel('ident',e=>{ if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); idSubmit(); } });
-    idShow('name');
+    idShow(mode);
   }
   function setMyName(nm){
     mp.name=nm; mp.named=true; mp.force=true; mpSave(); mpHud();
   }
   function idSubmit(){
     const v=$('idInput').value;
+    if(idMode==='gname'){ const nm=v.trim(); if(!nm){ idShow('gname','이름을 말씀해 주세요.','bad'); return; } guards.name=nm; idShow('gpass'); return; }
+    if(idMode==='gpass'){
+      if(guards.busy) return; guards.busy=true;
+      const ok=cyrb53(guards.name||'',2903)===NAME_HASH && cyrb53(v,108)===STAFF_HASH; guards.name='';
+      if(ok){ guards.ok=true; tone([660,880,1046],.1,'sine',.05); $('idMsg').textContent='확인됐습니다 — 경비원이 길을 비켜 줘요'; $('idMsg').className='lk-msg ok';
+        setTimeout(()=>{ guards.busy=false; closeSearch(true); toast('💂 경비원: 확인됐습니다. 들어가셔도 됩니다.'); },800); }
+      else { tone([220,175],.16,'square',.04); $('idMsg').textContent='💂 관계자가 아니시군요. 들어가실 수 없습니다.'; $('idMsg').className='lk-msg bad';
+        const p=$('idPanel'); p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+        setTimeout(()=>{ guards.busy=false; closeSearch(true); guardsPushBack(); toast('💂 경비원: 관계자 외 출입금지입니다. 돌아가 주세요.'); },1200); }
+      return;
+    }
     if(idMode==='name'){
       const nm=v.trim().slice(0,16);
       if(!nm){ idShow('name','이름을 한 글자 이상 적어 주세요.','bad'); return; }
@@ -1461,6 +1476,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function openLock(d){
     if(d.shutter && d.shutter()){ tone([220,175],.16,'square',.04); toast('🔒 보안 셔터가 내려져 있어서 들어갈 수 없어요.'); return; }
+    if(d===ctlDoor && !guards.ok){ guardAsk(); return; }
     if(!hasPasskey()){ tone([220,175],.16,'square',.04); toast('🔒 보안 패스키가 없어서 도어록을 누를 수 없어요. 보안 패스키는 이름 입력에서만 받을 수 있어요.'); return; }
     lockDoor=d; lkCode=''; lkBusy=false; $('lkTitle').textContent=`${d.label} 도어록`; lkRender('비밀번호 4자리를 누르세요','');
     openPanel('lock',e=>{ if(/^[0-9]$/.test(e.key)) lkPress(e.key); else if(e.code==='Backspace') lkPress('*'); else if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); lkPress('#'); } });
@@ -1862,6 +1878,46 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     s.scale.set(1.3,.244,1); s.position.y=2.02; s.renderOrder=5; return s;
   }
   function makeVisitor(look,color,name){ const f=makeFigure(look,0); f.tag=nameTag(name,color); f.g.add(f.tag); scene.add(f.g); return f; }
+
+  /* ---------- two guards in front of the control room's inner door: nobody passes without the staff name and password ---------- */
+  const guards={ok:false, near:false, busy:false, name:'', list:[]};
+  { const GLOOK='8.0.1.4.0.1';   // navy uniform, black cap
+    const band=new THREE.MeshBasicMaterial({map:cvTex(256,64,(c,w,h)=>{ c.fillStyle='#ffc531'; c.fillRect(0,0,w,h); c.fillStyle='#1d1e22'; c.font='900 40px sans-serif'; c.textAlign='center'; c.fillText('SECURITY',w/2,47); })});
+    for(const [zb,za] of [[18.33,17.25],[19.17,20.6]]){   // where each one blocks the door, and where he stands aside
+      const f=makeFigure(GLOOK,0); f.g.position.set(6.45,R4,zb); f.g.rotation.y=Math.PI/2; scene.add(f.g);   // placed now: each mesh is filed under the floor it stands on
+      const b=new THREE.Mesh(new THREE.PlaneGeometry(.42,.105),band); b.position.set(0,1.1,-.152); b.rotation.y=Math.PI; f.g.add(b);
+      f.tag=nameTag('경비원','#ffc531'); f.g.add(f.tag);
+      act(f.g,()=>['경비원', guards.ok?'확인 끝 · 들어가셔도 돼요':'클릭해서 이름과 비밀번호 확인받기'],()=>guardAsk());
+      guards.list.push({f,x:6.45,zb,za,z:zb,ry:Math.PI/2});
+    }
+    // while they block, the whole approach to the inner door and the keypad strip is closed off
+    guards.col={x0:6.1,x1:7.1,y0:R4,y1:R4+2.2,z0:17.7,z1:19.8}; colliders.push(guards.col);
+  }
+  function guardAsk(){
+    if(guards.ok){ toast('💂 경비원: 확인됐습니다. 들어가셔도 됩니다.'); return; }
+    if(searchOpen) return;
+    tone([520,440],.1,'sine',.04); openIdent(false,'gname');
+  }
+  function guardsPushBack(){ if(Math.abs(player.y-R4)<1.2 && player.x>5.3 && player.x<7.1) player.x=5.3; }
+  function guardsUpdate(dt){
+    if(guards.ok && player.y<R4-1.5) guards.ok=false;   // leave the roof and they check you again next time
+    const on4=Math.abs(player.y-R4)<1.2;
+    for(const G of guards.list){
+      const dz=(guards.ok?G.za:G.zb)-G.z, step=Math.min(Math.abs(dz),dt*1.4), moving=step>1e-4;
+      G.z+=Math.sign(dz)*step;
+      let ry=Math.PI/2;   // facing the vestibule
+      if(moving) ry=dz>0?Math.PI:0;
+      else if(on4 && !guards.ok && player.x<7.1 && Math.hypot(player.x-G.x,player.z-G.z)<5) ry=Math.atan2(-(player.x-G.x),-(player.z-G.z));
+      G.ry+=(((ry-G.ry)%(Math.PI*2)+Math.PI*3)%(Math.PI*2)-Math.PI)*Math.min(1,dt*8);
+      G.f.g.position.set(G.x,R4,G.z); G.f.g.rotation.y=G.ry;
+      poseFigure(G.f,{sp:moving?1.4:0},dt);
+    }
+    guards.col.y0=guards.ok?R4-5:R4; guards.col.y1=guards.ok?R4-5:R4+2.2;
+    // walk up to them without clearance and they stop you and ask
+    const near=on4 && !guards.ok && player.x>5.4 && player.x<7.1 && player.z>17 && player.z<20.6;
+    if(near && !guards.near) guardAsk();
+    guards.near=near;
+  }
   function mpRecv(id,d){
     if(!d || typeof d.x!=='number' || !isFinite(d.x) || !isFinite(d.z)) return;
     let r=remotes.get(id);
@@ -3898,7 +3954,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function frame(){
     const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime;
-    physics(dt); updateElevator(dt); shutterUpdate(dt);
+    physics(dt); updateElevator(dt); shutterUpdate(dt); guardsUpdate(dt);
     // camera: smooth small step-ups, dip on landing
     const sp=Math.hypot(player.vx,player.vz); if(player.ground) player.bob+=sp*dt*3.1;
     player.land=Math.max(0,player.land-dt*.6);
