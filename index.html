@@ -139,6 +139,11 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 @media (max-width:520px){.sp-list li{flex-wrap:wrap}.acts{width:100%;justify-content:flex-end}}
 #toast{position:fixed;left:50%;top:calc(60px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:9;background:rgba(40,36,32,.85);color:#fff;font-size:13.5px;padding:10px 18px;border-radius:999px;max-width:calc(100% - 32px);text-align:center;pointer-events:none;backdrop-filter:blur(6px)}
 #carry{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;background:rgba(40,36,32,.72);color:#fff;padding:9px 14px 9px 10px;border-radius:12px;backdrop-filter:blur(6px);max-width:min(360px,calc(100% - 32px));pointer-events:none}
+#tool{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(70px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;background:rgba(28,30,36,.8);color:#fff;padding:8px 10px 8px 14px;border-radius:12px;backdrop-filter:blur(6px);max-width:min(380px,calc(100% - 32px))}
+#tool b{display:block;font-size:13.5px}#tool span{font-size:12px;opacity:.8}
+#tool button{border:0;border-radius:9px;background:#ffc531;color:#1d1e22;font:800 13px inherit;padding:8px 12px;cursor:pointer;white-space:nowrap}
+#frozen{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:rgba(20,22,28,.86);color:#fff;font-size:18px;font-weight:800;padding:14px 26px;border-radius:14px;pointer-events:none;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+#frozen small{display:block;font-size:13px;font-weight:500;opacity:.8;margin-top:4px}
 #carry i{width:10px;height:34px;border-radius:2px;flex:none}
 #carry b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #carry span{font-size:11.5px;color:#e0d6c6}
@@ -277,6 +282,8 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 </div></div>
 <div id="theater" hidden><div class="th" role="dialog" aria-label="DVD 영상"><div class="th-head"><b id="thTitle"></b><button id="thClose">닫기 · Esc</button></div><div id="thStage"></div></div></div>
 <div id="cctv" hidden><div class="cc-top"><span class="rec">● REC</span><b id="ccName"></b><span id="ccTime"></span></div><div class="cc-nav"><button id="ccPrev">← 이전 카메라</button><button id="ccNext">다음 카메라 →</button><button id="ccClose">닫기 · Esc</button></div></div>
+<div id="tool" hidden><div><b id="toolT"></b><span id="toolS"></span></div><button type="button" id="toolUse">사용 · F</button></div>
+<div id="frozen" hidden>⏸ 관리자가 잠시 모두를 멈췄어요<small>풀릴 때까지 움직일 수 없어요</small></div>
 <div id="carry" hidden><i id="carrySw"></i><div><b id="carryT"></b><span>R 읽기 · Q 제자리에 꽂기 · 의자에 앉으면 펼쳐져요</span></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -287,7 +294,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 <script src="bookgen.js"></script>
 <script>
 // GitHub Pages lets browsers reuse the page for 10 minutes: if a newer build is online, load it straight away
-const BUILD='2026-11-11c';
+const BUILD='2026-11-11d';
 (()=>{ try{ fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{ const m=t.match(/const BUILD='([^']+)'/);
   if(m && m[1]!==BUILD && sessionStorage.getItem('gp-build')!==m[1]){ sessionStorage.setItem('gp-build',m[1]); location.replace(location.pathname+'?v='+m[1]); } }).catch(()=>{}); }catch(e){} })();
 /* ============================================================
@@ -398,6 +405,7 @@ addEventListener('keydown', e=>{
   if(e.code==='KeyR' && hooks.read && !e.repeat) hooks.read();
   if(e.code==='KeyQ' && hooks.drop && !e.repeat) hooks.drop();
   if(e.code==='KeyE' && hooks.use && !e.repeat) hooks.use();
+  if(e.code==='KeyF' && hooks.tool && !e.repeat && started) hooks.tool();
   if(e.code==='KeyN' && hooks.rename && !e.repeat && started) hooks.rename();
   if(e.code==='KeyM' && hooks.relook && !e.repeat && started) hooks.relook();
   if(e.code==='KeyV' && hooks.view && !e.repeat && started) hooks.view();
@@ -1776,6 +1784,24 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   hairTex.wrapS=hairTex.wrapT=THREE.RepeatWrapping;
   const faceGeo=new THREE.CylinderGeometry(.1735,.1735,.2,16,1,true,Math.PI-.9,1.8);
   const handGeo=new THREE.TorusGeometry(.062,.032,8,16,Math.PI*1.5);
+  // the control room's tools: a pause remote and a fold-out "no entry" A-frame sign
+  function remoteModel(){ const g=new THREE.Group();
+    const M2=remoteModel.m||(remoteModel.m={body:solid('#1d1f24'), btn:new THREE.MeshStandardMaterial({color:0xe23c3c,emissive:0x601010,roughness:.4}), face:new THREE.MeshBasicMaterial({map:cvTex(64,128,(c,w,h)=>{ c.fillStyle='#1d1f24'; c.fillRect(0,0,w,h); c.fillStyle='#fff'; c.fillRect(20,78,8,26); c.fillRect(36,78,8,26); c.fillStyle='#9aa3ad'; c.font='700 11px sans-serif'; c.textAlign='center'; c.fillText('PAUSE',w/2,120); })})});
+    g.add(new THREE.Mesh(new THREE.BoxGeometry(.07,.17,.026),M2.body));
+    const f=new THREE.Mesh(new THREE.PlaneGeometry(.066,.166),M2.face); f.position.z=.0135; g.add(f);
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.014,18),M2.btn); b.rotation.x=Math.PI/2; b.position.set(0,.04,.018); g.add(b);
+    return g; }
+  function signModel(){ const g=new THREE.Group();
+    const M2=signModel.m||(signModel.m={edge:solid('#ffc531'), face:new THREE.MeshStandardMaterial({roughness:.55,map:cvTex(256,440,(c,w,h)=>{
+      c.fillStyle='#ffc531'; c.fillRect(0,0,w,h);
+      for(const y0 of [0,h-64]){ c.save(); c.beginPath(); c.rect(0,y0,w,64); c.clip(); c.fillStyle='#1d1e22'; for(let x=-80;x<w+80;x+=48){ c.beginPath(); c.moveTo(x,y0+64); c.lineTo(x+24,y0+64); c.lineTo(x+88,y0); c.lineTo(x+64,y0); c.fill(); } c.restore(); }
+      c.fillStyle='#d62f2f'; c.beginPath(); c.arc(w/2,150,58,0,7); c.fill(); c.fillStyle='#fff'; c.fillRect(w/2-40,138,80,24);
+      c.fillStyle='#1d1e22'; c.textAlign='center'; c.font='900 52px "Noto Sans KR", sans-serif'; c.fillText('출입통제',w/2,280);
+      c.font='700 24px "Noto Sans KR", sans-serif'; c.fillText('관계자 외 출입금지',w/2,326); c.fillText('작업 중입니다',w/2,358); })}) });
+    for(const sd of [-1,1]){ const p=new THREE.Group(); p.position.set(0,0,sd*.17); p.rotation.x=-sd*.19; g.add(p);
+      const b=new THREE.Mesh(new THREE.BoxGeometry(.52,.92,.022),M2.edge); b.position.y=.46; p.add(b);
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(.5,.86),M2.face); f.position.set(0,.46,sd*.012); if(sd<0) f.rotation.y=Math.PI; p.add(f); }
+    return g; }
   function makeFigure(lookStr,layer){
     const L=parseLook(lookStr), g=new THREE.Group();
     const skin=solid(FIG_SKIN), pants=solid(L.pants), shirt=solid(L.shirt), hair=solid(L.hair), shoe=solid('#f4f4f4'), sole=solid('#222');
@@ -1836,8 +1862,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const heldMat=solid('#8a5bd1'), held=add(new THREE.BoxGeometry(.05,.27,.2),heldMat,0,-.66,-.12,armR); held.visible=false;
     const open=new THREE.Group(); open.position.set(0,1.02,-.42); open.rotation.x=-.9; g.add(open); open.visible=false;
     for(const s of [-1,1]){ const c=add(new THREE.BoxGeometry(.2,.012,.27),heldMat,s*.1,0,0,open); c.rotation.z=s*.18; const pg=add(new THREE.BoxGeometry(.19,.014,.25),solid('#fbf6ea'),s*.1,.008,0,open); pg.rotation.z=s*.18; }
+    const leftP=remoteModel(); leftP.position.set(0,-.7,-.07); leftP.rotation.x=-.5; armL.add(leftP); leftP.visible=false;
+    const leftS=signModel(); leftS.scale.setScalar(.55); leftS.position.set(0,-.95,-.1); leftS.rotation.x=-.55; armL.add(leftS); leftS.visible=false;
+    for(const o of [leftP,leftS]) o.traverse(m=>{ if(m.isMesh) meshes.push(m); });
     if(layer) meshes.forEach(o=>o.layers.set(layer));
-    return {g,armL,armR,legL,legR,held,open,heldMat,heldColor:'',phase:0,act:null,look:lookStr};
+    return {g,armL,armR,legL,legR,held,open,heldMat,heldColor:'',phase:0,act:null,look:lookStr,leftP,leftS};
   }
   function poseFigure(f,o,dt){
     f.phase+=o.sp*dt*4.2;
@@ -1845,6 +1874,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     let aL=sw, aR=-sw, zL=0, zR=0;
     if(o.read){ aL=aR=1.2; zL=.32; zR=-.32; }
     else if(o.carry) aR=.8;
+    if(o.left && !o.read){ aL=.55; zL=0; }
     if(f.act){ f.act.t+=dt; const k=Math.sin(Math.PI*Math.min(1,f.act.t/.8)); const goal=f.act.kind==='door'?1.45:f.act.kind==='put'?1.6:1.7; aR+=(goal-aR)*k; if(f.act.kind==='door') zR=-.1*k; if(f.act.t>.8) f.act=null; }
     const e=Math.min(1,dt*14), ap=(p,x,z)=>{ p.rotation.x+=(x-p.rotation.x)*e; p.rotation.z+=(z-p.rotation.z)*e; };
     ap(f.armL,aL,zL); ap(f.armR,aR,zR);
@@ -1852,6 +1882,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     const col=o.read||o.carry||'';
     if(col && col!==f.heldColor){ f.heldColor=col; f.heldMat.color.set(col).convertSRGBToLinear(); }
     f.held.visible=!!o.carry && !o.read; f.open.visible=!!o.read;
+    f.leftP.visible=o.left==='p' && !o.read; f.leftS.visible=o.left==='s' && !o.read;
   }
 
   /* ---------- multiplayer: other visitors (WebRTC peer-to-peer via Trystero / Nostr signalling) ---------- */
@@ -1903,6 +1934,81 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     // while they block, the whole approach to the inner door and the keypad strip is closed off
     guards.col={x0:6.1,x1:7.1,y0:R4,y1:R4+2.2,z0:17.6,z1:19.85}; colliders.push(guards.col);
   }
+  /* ---------- control room tools: the pause remote and the "no entry" signs (held in the left hand, F to use) ---------- */
+  const SIGN_MAX=6, SIGN_R=1.6;
+  const tools={held:'', pausing:false, signs:[], hitT:0};
+  const lhand=new THREE.Group(); lhand.position.set(-.3,-.3,-.58); lhand.rotation.set(-.2,.35,0); lhand.visible=false; camera.add(lhand);
+  const lhP=remoteModel(); lhP.rotation.x=-.9; lhand.add(lhP);
+  const lhS=signModel(); lhS.scale.setScalar(.32); lhS.position.set(0,-.2,0); lhS.rotation.y=.4; lhand.add(lhS);
+  { // a steel tool cabinet in the corner of the control room
+    const g=new THREE.Group(); g.position.set(12.27,R4,14.7); g.rotation.y=Math.PI/2; scene.add(g);
+    box(1.1,.9,.5,solid('#59616b'),0,.45,0,g); box(1.14,.03,.54,X.steel,0,.915,0,g); box(.5,.02,.01,X.steel,-.27,.62,-.255,g); box(.5,.02,.01,X.steel,.27,.62,-.255,g);
+    sign(.7,.14,350,70,(c,w,h)=>{ c.fillStyle='#1d2b3a'; c.fillRect(0,0,w,h); c.fillStyle='#ffc531'; c.font='900 34px "Noto Sans KR", sans-serif'; c.textAlign='center'; c.fillText('관리 도구함',w/2,48); },g,0,.78,-.252,Math.PI,0,false);
+    collide(g);
+    tools.standP=remoteModel(); tools.standP.position.set(-.25,.95,-.05); tools.standP.rotation.x=-Math.PI/2+.05; g.add(tools.standP);
+    act(tools.standP,()=>['일시정지 리모컨', tools.held==='p'?'클릭하면 제자리에 놓아요':'클릭해서 왼손에 들기 · 들고 F를 누르면 나만 빼고 모두 멈춰요'],()=>takeTool('p'));
+    const stack=new THREE.Group(); stack.position.set(.28,.93,0); g.add(stack);
+    for(let i=0;i<3;i++){ const m=signModel(); m.scale.setScalar(.5); m.rotation.set(Math.PI/2,0,0); m.position.set(0,.025+i*.03,.05); stack.add(m); }
+    act(stack,()=>['출입통제 표지판', tools.held==='s'?'클릭하면 제자리에 놓아요':'클릭해서 왼손에 들기 · 들고 F를 누르면 앞에 세워요 (몇 개든)'],()=>takeTool('s'));
+  }
+  function setHeld(k){
+    tools.held=k; mp.force=true;
+    lhand.visible=!!k; lhP.visible=k==='p'; lhS.visible=k==='s'; tools.standP.visible=k!=='p';
+    toolHud();
+  }
+  function takeTool(k){
+    if(tools.held===k){ setHeld(''); toast(k==='p'?'리모컨을 제자리에 놓았어요.':'표지판을 제자리에 놓았어요.'); return; }
+    setHeld(k); mpAct('pick');
+    toast(k==='p' ? (tools.pausing?'리모컨을 들었어요. F를 누르면 일시정지가 풀려요.':'리모컨을 왼손에 들었어요. F를 누르면 나만 빼고 모두 멈춰요.') : '출입통제 표지판을 왼손에 들었어요. F를 누르면 바로 앞에 세워요.');
+  }
+  function toolHud(){
+    const el=$('tool'); if(!tools.held && !tools.pausing){ el.hidden=true; return; } el.hidden=false;
+    if(tools.held==='s'){ $('toolT').textContent='🚧 출입통제 표지판'; $('toolS').textContent=`F 앞에 세우기 · Q 내려놓기 · 세운 것 ${tools.signs.length}/${SIGN_MAX}`; $('toolUse').hidden=false; $('toolUse').textContent='세우기 · F'; }
+    else if(tools.held==='p'){ $('toolT').textContent=tools.pausing?'⏸ 모두 멈춤 중':'⏸ 일시정지 리모컨'; $('toolS').textContent=tools.pausing?'F 다시 누르면 풀려요 · 나만 움직일 수 있어요':'F 나만 빼고 모두 멈추기 · Q 내려놓기'; $('toolUse').hidden=false; $('toolUse').textContent=tools.pausing?'풀기 · F':'멈추기 · F'; }
+    else { $('toolT').textContent='⏸ 모두 멈춤 중'; $('toolS').textContent='리모컨을 다시 들고 F를 누르면 풀려요'; $('toolUse').hidden=true; }
+  }
+  $('toolUse').onclick=()=>hooks.tool();
+  hooks.tool=()=>{
+    if(searchOpen || reading || isFrozen()) return;
+    if(tools.held==='p'){
+      tools.pausing=!tools.pausing; mp.force=true; mpAct('door');
+      tone(tools.pausing?[880,660,440]:[440,660,880],.09,'sine',.05);
+      toast(tools.pausing?'⏸ 나만 빼고 모두 멈췄어요. 다시 F를 누르면 풀려요.':'▶ 일시정지를 풀었어요. 모두 다시 움직일 수 있어요.'); toolHud(); return;
+    }
+    if(tools.held==='s'){
+      if(tools.signs.length>=SIGN_MAX){ toast(`표지판은 한 번에 ${SIGN_MAX}개까지 세울 수 있어요. 세운 표지판을 클릭하면 다시 들어요.`); return; }
+      const fx=-Math.sin(player.yaw), fz=-Math.cos(player.yaw), x=player.x+fx*1.2, z=player.z+fz*1.2, y=player.y;
+      if(blocked(x,z,y) || Math.abs(groundAt(x,z,y+.3)-y)>.3){ toast('여기에는 세울 수 없어요. 바닥이 평평한 빈 곳을 보고 F를 눌러 주세요.'); return; }
+      const a=[+x.toFixed(2),+y.toFixed(2),+z.toFixed(2),+player.yaw.toFixed(2)];
+      const o={a, g:placeSign(a,true)}; o.g.userData.mine=o; tools.signs.push(o);
+      setHeld(''); mp.force=true; mpAct('put'); tone([523,659],.08,'sine',.04);
+      toast(`🚧 출입통제 표지판을 세웠어요. 다른 사람은 ${SIGN_R}m 안으로 들어올 수 없어요. 표지판을 클릭하면 다시 들어요.`); return;
+    }
+    toast('관리 도구함에서 리모컨이나 표지판을 먼저 들어 주세요.');
+  };
+  function placeSign(a,mine){
+    const g=signModel(); g.position.set(a[0],a[1],a[2]); g.rotation.y=a[3]; scene.add(g);
+    act(g,()=> mine ? ['출입통제 표지판 (내가 세움)','클릭하면 다시 왼손에 들어요'] : ['출입통제 표지판','관계자가 작업 중이에요 · 가까이 갈 수 없어요'],()=>{
+      if(!mine){ toast('🚧 관계자가 세운 출입통제 표지판이에요. 치울 수 없어요.'); return; }
+      const i=tools.signs.findIndex(o=>o.g===g); if(i<0) return;
+      removeSign(g); tools.signs.splice(i,1); setHeld('s'); mp.force=true; mpAct('pick'); toast('표지판을 다시 왼손에 들었어요.');
+    });
+    return g;
+  }
+  function removeSign(g){ scene.remove(g); g.traverse(m=>{ const i=actionMeshes.indexOf(m); if(i>=0) actionMeshes.splice(i,1); }); }
+  function syncRemoteSigns(r){ (r.signG||[]).forEach(removeSign); r.signG=(r.sg||[]).map(a=>placeSign(a,false)); }
+  // other people's signs keep me out of a circle around them (I can always step away, never closer)
+  function signBlocked(x,z,feet){
+    for(const r of remotes.values()) for(const a of r.sg||[]){
+      if(Math.abs(feet-a[1])>1.5) continue;
+      const d=Math.hypot(x-a[0],z-a[2]);
+      if(d<SIGN_R && d<Math.hypot(player.x-a[0],player.z-a[2])-1e-4){ const now=performance.now(); if(now-tools.hitT>3500){ tools.hitT=now; toast('🚧 출입통제 중이에요. 관계자가 작업 중이라 지금은 들어갈 수 없어요.'); } return true; }
+    }
+    return false;
+  }
+  // someone else is holding the pause: I can't move or touch anything until they release it
+  function isFrozen(){ if(tools.pausing) return false; for(const r of remotes.values()) if(r.pz) return true; return false; }
+  hooks.dropTool=()=>{ if(!tools.held) return false; const k=tools.held; setHeld(''); toast(k==='p'?'리모컨을 제자리에 놓았어요.':'표지판을 제자리에 놓았어요.'); return true; };
   function guardAsk(){
     if(guards.ok){ toast('💂 경비원: 확인됐습니다. 들어가셔도 됩니다.'); return; }
     if(searchOpen) return;
@@ -1939,8 +2045,11 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(!r){ r={v:makeVisitor(look,color,name), name, color, look, x:d.x, y:d.y, z:d.z, r:d.r, ev:d.e, t:d.t}; r.v.g.position.set(d.x,d.y,d.z); remotes.set(id,r); mpHud(); toast(`${name} 님이 들어왔어요.`); }
     if(d.e!==r.ev){ r.ev=d.e; if(d.k) r.v.act={kind:String(d.k),t:0}; }
     Object.assign(r,{tx:d.x, ty:d.y, tz:d.z, tr:d.r, seated:!!d.s, carry:safeColor(d.b), read:safeColor(d.rd), seen:performance.now()});
+    r.left = d.lh==='p'||d.lh==='s' ? d.lh : ''; r.pz=!!d.pz;
+    const sg=Array.isArray(d.sg) ? d.sg.slice(0,SIGN_MAX).filter(a=>Array.isArray(a) && a.length===4 && a.every(n=>typeof n==='number' && isFinite(n))) : [];
+    const key=JSON.stringify(sg); if(key!==r.sgKey){ r.sgKey=key; r.sg=sg; syncRemoteSigns(r); }
   }
-  function mpRemove(id){ const r=remotes.get(id); if(!r) return; scene.remove(r.v.g); remotes.delete(id); mpHud(); toast(`${r.name} 님이 나갔어요.`); }
+  function mpRemove(id){ const r=remotes.get(id); if(!r) return; scene.remove(r.v.g); r.sg=[]; syncRemoteSigns(r); remotes.delete(id); mpHud(); toast(`${r.name} 님이 나갔어요.`); }
   function mpHud(){
     const el=$('mp'); if(!el) return;
     const n=remotes.size;
@@ -1992,20 +2101,21 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     for(const [id,r] of remotes) if(now-r.seen>10000) mpRemove(id);
     if(!mp.send) return;
     const st={x:+player.x.toFixed(2), y:+(player.y-(player.seat?.2:0)).toFixed(2), z:+player.z.toFixed(2), r:+player.yaw.toFixed(2), s:player.seat?1:0,
-      n:mp.name, c:mp.color, l:mp.look, b:carried?safeColor(carried.book.color):'', rd:reading&&cur?safeColor(cur.color)||'#8a5bd1':'', e:mp.ev, k:mp.evk};
-    const key=[st.x,st.y,st.z,st.r,st.s,st.b,st.rd,st.e].join(',');
+      n:mp.name, c:mp.color, l:mp.look, b:carried?safeColor(carried.book.color):'', rd:reading&&cur?safeColor(cur.color)||'#8a5bd1':'', e:mp.ev, k:mp.evk,
+      lh:tools.held, pz:tools.pausing?1:0, sg:tools.signs.map(o=>o.a)};
+    const key=[st.x,st.y,st.z,st.r,st.s,st.b,st.rd,st.e,st.lh,st.pz,JSON.stringify(st.sg)].join(',');
     if(mp.force || key!==mp.last || now-mp.beatT>2000){ mp.force=false; mp.last=key; mp.beatT=now; try{ mp.send(st); }catch(e){} }
   },100);
   function mpUpdate(dt){
     myFig.g.position.set(player.x, player.y-(player.seat?.2:0), player.z); myFig.g.rotation.y=player.yaw;
-    poseFigure(myFig,{sp:Math.hypot(player.vx,player.vz), seated:!!player.seat, carry:carried?safeColor(carried.book.color)||'#8a5bd1':'', read:reading&&cur?safeColor(cur.color)||'#8a5bd1':''},dt);
+    poseFigure(myFig,{sp:Math.hypot(player.vx,player.vz), seated:!!player.seat, carry:carried?safeColor(carried.book.color)||'#8a5bd1':'', read:reading&&cur?safeColor(cur.color)||'#8a5bd1':'', left:tools.held},dt);
     for(const [id,r] of remotes){
       const k=Math.min(1,dt*10), px=r.x, pz=r.z;
       r.x+=(r.tx-r.x)*k; r.y+=(r.ty-r.y)*k; r.z+=(r.tz-r.z)*k;
       let dr=r.tr-r.r; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); r.r+=dr*k;
       const sp=Math.hypot(r.x-px,r.z-pz)/Math.max(dt,1e-3);
       r.v.g.position.set(r.x,r.y,r.z); r.v.g.rotation.y=r.r;
-      poseFigure(r.v,{sp, seated:r.seated, carry:r.carry, read:r.read},dt);
+      poseFigure(r.v,{sp, seated:r.seated, carry:r.carry, read:r.read, left:r.left},dt);
     }
   }
   let cctvMode=false, ccView=0, ccIdx=0, ccBoot=0, ccTimeT=0;
@@ -3641,7 +3751,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     return bookCache.get(key);
   }
   const tipEl=$('tip');
-  function activate(h){ if(h.type==='a') h.obj.userData.act(); else if(h.type==='k') openSearch(); else if(h.type==='c') sit(h.seat); else { mpAct('pick'); openBook(bookFor(h)); } }
+  function activate(h){ if(isFrozen()){ toast('⏸ 관리자가 잠시 멈춰 두었어요.'); return; } if(h.type==='a') h.obj.userData.act(); else if(h.type==='k') openSearch(); else if(h.type==='c') sit(h.seat); else { mpAct('pick'); openBook(bookFor(h)); } }
 
   /* ---------- sitting ---------- */
   function sit(seat){
@@ -3702,7 +3812,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   hooks.read=()=>{ if(carried) openBook(carried.book); };
   const nearDoor=()=>player.y<1 && Math.abs(player.x)<3.4 && Math.abs(player.z-RL)<5;
   hooks.use=()=>{
-    if(!started || auto) return;
+    if(!started || auto || isFrozen()) return;
     if(hooks.elev && hooks.elev()) return;
     const rd=nearRoomDoor(); if(rd){ useDoor(rd); return; }
     if(!nearDoor()) return;
@@ -3713,7 +3823,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     } else { doorTarget = doorTarget ? 0 : 1; doorCloseT=6; }
     mpAct('door'); mpDoor('m',doorTarget);
   };
-  hooks.drop=()=>returnBook(false);
+  hooks.drop=()=>{ if(hooks.dropTool && hooks.dropTool()) return; returnBook(false); };
 
   /* ---------- search kiosk ---------- */
   const spList=$('spList'), spStatus=$('spStatus'), spQ=$('spQ'), spChips=$('spChips'), toastEl=$('toast');
@@ -3906,7 +4016,9 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const clock=new THREE.Clock(); let saveT=0, hoverT=0, zoneT=0, shadowT=0, perfT=0, perfN=0;
   function physics(dt){
     let f=0, sx=0;
-    if(!reading && !searchOpen && started){
+    const frozen=isFrozen(); if(frozen!==tools.fz){ tools.fz=frozen; $('frozen').hidden=!frozen; if(frozen){ keys.clear(); toast('⏸ 관리자가 잠시 모두를 멈췄어요.'); } }
+    if(frozen){ player.vx=player.vz=0; }
+    if(!reading && !searchOpen && started && !frozen){
       if(keys.has('KeyW')) f+=1; if(keys.has('KeyS')) f-=1;
       if(keys.has('KeyD')) sx+=1; if(keys.has('KeyA')) sx-=1;
       f+=touchMove.f; sx+=touchMove.s;
@@ -3948,8 +4060,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     let tvx=fx*f+rx*sx, tvz=fz*f+rz*sx; const l=Math.hypot(tvx,tvz); if(l>0){ tvx=tvx/l*speed; tvz=tvz/l*speed; }
     const k=1-Math.exp(-(player.ground?10:3)*dt); player.vx+=(tvx-player.vx)*k; player.vz+=(tvz-player.vz)*k;
     const nx=player.x+player.vx*dt, nz=player.z+player.vz*dt;
-    if(!blocked(nx,player.z,player.y)) player.x=nx; else player.vx=0;
-    if(!blocked(player.x,nz,player.y)) player.z=nz; else player.vz=0;
+    if(!blocked(nx,player.z,player.y) && !signBlocked(nx,player.z,player.y)) player.x=nx; else player.vx=0;
+    if(!blocked(player.x,nz,player.y) && !signBlocked(player.x,nz,player.y)) player.z=nz; else player.vz=0;
     // vertical: jump, gravity, land on whatever is underfoot
     if(jumpQueued && player.ground){ player.vy=JUMP_V; player.ground=false; }
     jumpQueued=false;
