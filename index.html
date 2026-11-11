@@ -286,6 +286,10 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--night);color:var
 <script src="books-extra.js"></script>
 <script src="bookgen.js"></script>
 <script>
+// GitHub Pages lets browsers reuse the page for 10 minutes: if a newer build is online, load it straight away
+const BUILD='2026-11-11c';
+(()=>{ try{ fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(t=>{ const m=t.match(/const BUILD='([^']+)'/);
+  if(m && m[1]!==BUILD && sessionStorage.getItem('gp-build')!==m[1]){ sessionStorage.setItem('gp-build',m[1]); location.replace(location.pathname+'?v='+m[1]); } }).catch(()=>{}); }catch(e){} })();
 /* ============================================================
    READER
    ============================================================ */
@@ -1438,9 +1442,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   }
   function idSubmit(){
     const v=$('idInput').value;
-    if(idMode==='gname'){ const nm=v.trim(); if(!nm){ idShow('gname','이름을 말씀해 주세요.','bad'); return; } guards.name=nm; idShow('gpass'); return; }
+    if(idMode==='gname'){ const nm=v.normalize('NFC').replace(/\s+/g,''); if(!nm){ idShow('gname','이름을 말씀해 주세요.','bad'); return; } guards.name=nm; idShow('gpass'); return; }
     if(idMode==='gpass'){
       if(!v){ idShow('gpass','비밀번호를 말씀해 주세요.','bad'); return; }
+      if(HANGUL.test(v)){ idShow('gpass','⌨️ 한글로 입력됐어요. 한/영 키로 영문으로 바꾼 뒤 다시 입력해 주세요.','bad'); return; }
       if(guards.busy) return; guards.busy=true;
       const ok=cyrb53(guards.name||'',2903)===NAME_HASH && cyrb53(v,108)===STAFF_HASH; guards.name='';
       if(ok){ guards.ok=true; tone([660,880,1046],.1,'sine',.05); $('idMsg').textContent='확인됐습니다 — 경비원이 길을 비켜 줘요'; $('idMsg').className='lk-msg ok';
@@ -1453,9 +1458,10 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
     if(idMode==='name'){
       const nm=v.trim().slice(0,16);
       if(!nm){ idShow('name','이름을 한 글자 이상 적어 주세요.','bad'); return; }
-      if(cyrb53(nm,2903)===NAME_HASH){ idName=nm; idShow('pass','비밀번호를 맞히면 보안 패스키를 드려요.'); return; }
+      if(cyrb53(nm.normalize('NFC').replace(/\s+/g,''),2903)===NAME_HASH){ idName=nm; idShow('pass','비밀번호를 맞히면 보안 패스키를 드려요.'); return; }
       setMyName(nm); closeSearch(true); toast(`이제 다른 사람에게 '${nm}'(으)로 보여요.`);
     } else {
+      if(HANGUL.test(v)){ idShow('pass','⌨️ 한글로 입력됐어요. 한/영 키로 영문으로 바꾼 뒤 다시 입력해 주세요.','bad'); return; }
       if(cyrb53(v,108)===STAFF_HASH){
         grantPasskey(); setMyName(idName); tone([784,988,1175,1568],.11,'sine',.05);
         $('idMsg').textContent='확인됐어요 — 보안 패스키를 받았어요'; $('idMsg').className='lk-msg ok';
@@ -1466,6 +1472,8 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       }
     }
   }
+  const HANGUL=/[\u1100-\u11ff\u3130-\u318f\uac00-\ud7a3]/;
+  $('idInput').addEventListener('keydown',e=>{ if((idMode==='pass'||idMode==='gpass') && e.getModifierState && e.getModifierState('CapsLock')){ $('idMsg').textContent='⇪ Caps Lock이 켜져 있어요.'; $('idMsg').className='lk-msg bad'; } });
   $('idOk').onclick=idSubmit;
   $('idCancel').onclick=()=>{ if(idMode==='pass') idShow('name'); else { if(idFirst){ mp.named=true; mpSave(); } closeSearch(true); } };
   let lockDoor=null, lkCode='', lkBusy=false;
@@ -1885,7 +1893,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
   const guards={ok:false, near:false, busy:false, name:'', list:[]};
   { const GLOOK='8.0.1.4.0.1';   // navy uniform, black cap
     const band=new THREE.MeshBasicMaterial({map:cvTex(256,64,(c,w,h)=>{ c.fillStyle='#ffc531'; c.fillRect(0,0,w,h); c.fillStyle='#1d1e22'; c.font='900 40px sans-serif'; c.textAlign='center'; c.fillText('SECURITY',w/2,47); })});
-    for(const [zb,za] of [[18.33,17.25],[19.17,20.6]]){   // where each one blocks the door, and where he stands aside
+    for(const [zb,za] of [[18.02,17.0],[19.48,20.75]]){   // where each one blocks the door, and where he stands aside
       const f=makeFigure(GLOOK,0); f.g.position.set(6.45,R4,zb); f.g.rotation.y=Math.PI/2; scene.add(f.g);   // placed now: each mesh is filed under the floor it stands on
       const b=new THREE.Mesh(new THREE.PlaneGeometry(.42,.105),band); b.position.set(0,1.1,-.152); b.rotation.y=Math.PI; f.g.add(b);
       f.tag=nameTag('경비원','#ffc531'); f.g.add(f.tag);
@@ -1893,7 +1901,7 @@ const GLYPHS = [...new Set((document.currentScript ? document.currentScript.text
       guards.list.push({f,x:6.45,zb,za,z:zb,ry:Math.PI/2});
     }
     // while they block, the whole approach to the inner door and the keypad strip is closed off
-    guards.col={x0:6.1,x1:7.1,y0:R4,y1:R4+2.2,z0:17.7,z1:19.8}; colliders.push(guards.col);
+    guards.col={x0:6.1,x1:7.1,y0:R4,y1:R4+2.2,z0:17.6,z1:19.85}; colliders.push(guards.col);
   }
   function guardAsk(){
     if(guards.ok){ toast('💂 경비원: 확인됐습니다. 들어가셔도 됩니다.'); return; }
